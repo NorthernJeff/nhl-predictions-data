@@ -24,6 +24,7 @@ nav.tabs a[data-tab=stats],nav.tabs a[data-tab=compare]{background:#a5d8ff}
 .dv{color:var(--ink);font-weight:700;font-size:14px}
 .avgnote{color:var(--ink);font-weight:800}
 nav.tabs a[data-tab=chart]{background:#a5d8ff}
+body:not(.picked) nav.tabs a[data-tab=stats],body:not(.picked) nav.tabs a[data-tab=compare]{display:none}
 nav.tabs a.on{opacity:1;font-weight:700;border-bottom-color:#1c2230!important;box-shadow:0 -2px 8px rgba(0,0,0,.12)}nav.tabs a.on{border-bottom:4px solid #111;margin-bottom:0}
 .toolbar{background:linear-gradient(90deg,rgba(200,16,46,.05),rgba(0,40,104,.05) 50%,rgba(0,104,71,.05))}
 .toolbar .abtn.on{background:linear-gradient(120deg,#C8102E,#041E42);color:#fff;border-color:transparent}
@@ -540,7 +541,8 @@ function nextMeetingHTML(a,b){const ms=meetings(a,b);
   if(!ms.length)return`<div class="nextm">These two teams don't meet again this regular season. Pick the home team under Home Team Advantage.</div>`;
   const n=ms[0];return`<div class="nextm"><span>Next meeting:</span><b>${fdate(n[0],{weekday:"long",month:"long",day:"numeric"})} · ${n[1]} ET</b><span>${mini(n[2])} at ${mini(n[3])}</span><span style="color:var(--ink2)">— ${T[n[3]].name} set as home team</span>
     ${ms.length>1?`<span class="chips">Later: ${ms.slice(1).map(g=>`<span class="chip">${fdate(g[0],{month:"short",day:"numeric"})} · at ${mini(g[3])}</span>`).join("")}</span>`:""}</div>`}
-function pickGame(a,h){cmp=[a,h];store.set("cmp",cmp);
+let gamePicked=false;
+function pickGame(a,h){gamePicked=true;document.body.classList.add("picked");cmp=[a,h];store.set("cmp",cmp);
   // the Momentum chart switches to the two teams in the chosen game (the user can still change it freely afterwards)
   selected=new Set([a,h]);soloTeam=null;changed();lastPairKey=null;homeTeam=h;store.set("home",h);document.getElementById("stats").scrollTop=0;document.getElementById("compare").scrollTop=0;if(location.hash!=="#stats")location.hash="stats";else showTab("stats")}
 function upcomingHTML(collapsed){const up=upcoming();if(!up.length)return"";const days=[...new Set(up.map(g=>g[0]))].slice(0,3);
@@ -837,7 +839,7 @@ function renderLeaders(){const el=document.getElementById("leaders");if(curTab!=
 // ----- tabs -----
 let curTab="home";
 const PANES={home:"paneHome",chart:"paneChart",stats:"paneStats",compare:"paneCompare",leaders:"paneLeaders"};
-function showTab(t){if(!PANES[t])t="home";curTab=t;
+function showTab(t){if(!PANES[t])t="home";if((t==="stats"||t==="compare")&&!gamePicked)t="home";curTab=t;
   for(const k in PANES)document.getElementById(PANES[k]).classList.toggle("on",k===t);
   document.querySelectorAll("nav.tabs a").forEach(a=>a.classList.toggle("on",a.dataset.tab===t));
   if(t==="chart")requestAnimationFrame(resize);if(t==="stats"||t==="compare")renderStats();if(t==="leaders")renderLeaders();if(t==="home")renderHome()}
