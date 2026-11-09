@@ -6,8 +6,14 @@
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
-    "run_worker_first": ["/api", "/api/*"]
+    "run_worker_first": true
   },
+  // Your own domain (registered at Cloudflare). www forwards to the main address in worker/index.js.
+  "routes": [
+    { "pattern": "puck-off.com", "custom_domain": true },
+    { "pattern": "www.puck-off.com", "custom_domain": true }
+  ],
+  "workers_dev": true,
   // Hockey-pool database. Created automatically on first deploy.
   "d1_databases": [
     { "binding": "DB", "database_name": "nhl-pools" }
