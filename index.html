@@ -256,7 +256,9 @@ body.dark .otv,body.dark .otv>span{color:#b3a2f5}body.dark .otv b{color:#c6b8ff}
 nav.tabs a[data-tab=leaders]{background:#e03131;color:#fff!important}
 #paneLeaders{flex-direction:column}#leaders{flex:1;overflow:auto;background:var(--panel)}
 #paneBracket,#panePoLeaders{flex-direction:column}#bracket,#poleaders{flex:1;overflow:auto;background:var(--panel)}
-nav.tabs a.po.silver{margin-left:auto;background:linear-gradient(180deg,#f8f9fa,#c3c9d1);box-shadow:inset 0 0 0 1px #aab2bd}
+nav.tabs{align-items:flex-end}.tgrp{display:flex;flex-direction:column}.tgrp.pog{margin-left:auto}.tgt{display:flex;gap:6px}
+.tgl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);text-align:center;border:1px solid var(--line);border-bottom:0;border-radius:7px 7px 0 0;padding:2px 10px 3px;margin:0 2px 4px}
+nav.tabs a.po.silver{background:linear-gradient(180deg,#f8f9fa,#c3c9d1);box-shadow:inset 0 0 0 1px #aab2bd}
 nav.tabs a.po.gold{background:linear-gradient(180deg,#fff4c2,#e9bd3f);box-shadow:inset 0 0 0 1px #c99a1e}
 nav.tabs a.po .lk{display:none}nav.tabs a.po.locked .lk{display:inline}
 nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opacity:.8}
@@ -308,17 +310,19 @@ nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opac
   </div>
 </header>
 <nav class="tabs">
-  <a data-tab="home" href="#home">Upcoming games</a>
+  <a data-tab="home" href="#home">Upcoming Games</a>
+  <div class="tgrp"><span class="tgl">Regular Season</span><div class="tgt">
   <a data-tab="stats" href="#stats">Game Statistics</a>
   <a data-tab="compare" href="#compare">Teams Statistics</a>
-  <a data-tab="chart" href="#chart">Momentum chart<span class="cnt" id="selcnt"></span></a>
-  <a data-tab="leaders" href="#leaders">Leaderboards</a>
+  <a data-tab="chart" href="#chart">Momentum Chart<span class="cnt" id="selcnt"></span></a>
+  <a data-tab="leaders" href="#leaders">Leaderboards</a></div></div>
+  <div class="tgrp pog"><span class="tgl">Playoffs</span><div class="tgt">
   <a data-tab="bracket" href="#bracket" class="po silver locked"><span class="lk">🔒 </span>Playoff Bracket</a>
-  <a data-tab="poleaders" href="#poleaders" class="po gold locked"><span class="lk">🔒 </span>Playoff Leaders</a>
+  <a data-tab="poleaders" href="#poleaders" class="po gold locked"><span class="lk">🔒 </span>Playoff Leaders</a></div></div>
 </nav>
 <main class="pane" id="paneChart">
   <aside id="teamside">
-    <div class="tsh"><b>Teams on the chart</b><span><button class="abtn" id="all">All</button><button class="abtn" id="none">None</button></span></div>
+    <div class="tsh"><b>Teams on the Chart</b><span><button class="abtn" id="all">All</button><button class="abtn" id="none">None</button></span></div>
     <div class="tmsg">Tick the teams to draw. ★ shows one team alone. This list only affects the chart.</div>
     <div id="teams"></div>
   </aside>
@@ -371,9 +375,9 @@ function fitLine(h){let[r,g,b]=hex2rgb(h);let i=0;const hx=()=>"#"+[r,g,b].map(v
 function liftColor(h){let[r,g,b]=hex2rgb(h);let i=0;while(lum("#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join(""))<.16&&i<20){r=Math.round(r+(255-r)*.15);g=Math.round(g+(255-g)*.15);b=Math.round(b+(255-b)*.15);i++}return`rgb(${r},${g},${b})`}
 const store={get(k,d){try{const v=localStorage.getItem("nhlwl:"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("nhlwl:"+k,JSON.stringify(v))}catch(e){}}};
 // ----- light / dark mode -----
-let darkMode=store.get("darkMode",false);
+let darkMode=store.get("darkMode2",true);
 function applyMode(){document.body.classList.toggle("dark",darkMode);const b=document.getElementById("modebtn");if(b)b.textContent=darkMode?"☀ Light":"☾ Dark"}
-applyMode();document.getElementById("modebtn").onclick=()=>{darkMode=!darkMode;store.set("darkMode",darkMode);applyMode();if(typeof draw==="function")draw();if(typeof renderStats==="function"){renderStats();if(curTab==="home")renderHome()}};
+applyMode();document.getElementById("modebtn").onclick=()=>{darkMode=!darkMode;store.set("darkMode2",darkMode);applyMode();if(typeof draw==="function")draw();if(typeof renderStats==="function"){renderStats();if(curTab==="home")renderHome()}};
 
 let DATA=null,SERIES={},selected=new Set(store.get("sel",TEAMS.map(t=>t[1]))),otlMode=store.get("otl","tie");
 let drawings=store.get("draw",[]),tool="cursor",pending=null,selDraw=-1,hoverTeam=null,soloTeam=null;
@@ -580,7 +584,7 @@ function pickGame(a,h){gamePicked=true;document.body.classList.add("picked");cmp
   selected=new Set([a,h]);soloTeam=null;changed();lastPairKey=null;homeTeam=h;store.set("home",h);document.getElementById("stats").scrollTop=0;document.getElementById("compare").scrollTop=0;if(location.hash!=="#stats")location.hash="stats";else showTab("stats")}
 function upcomingHTML(collapsed){const up=upcoming();if(!up.length)return"";const days=[...new Set(up.map(g=>g[0]))].slice(0,3);
   const body=days.map(d=>`<div class="day">${fdate(d,{weekday:"long",month:"long",day:"numeric"})}</div>`+up.filter(g=>g[0]===d).map(g=>`<div class="g" style="border-left-color:${T[g[3]].color}"><span class="t">${g[1]}</span><span class="m">${mini(g[2])} ${T[g[2]].name} <span class="at">at</span> ${mini(g[3])} ${T[g[3]].name}</span><button class="abtn" data-pick="${g[2]},${g[3]}">Calculate the odds</button></div>`).join("")).join("");
-  return collapsed?`<div class="upc"><details><summary>Upcoming games — pick another matchup</summary>${body}</details></div>`:`<div class="upc"><h3>Upcoming games</h3><div style="padding:0 14px 8px;color:var(--ink2);font-size:12.5px">Click a game to compare the two teams. Times are Eastern.</div>${body}</div>`}
+  return collapsed?`<div class="upc"><details><summary>Upcoming Games — Pick Another Matchup</summary>${body}</details></div>`:`<div class="upc"><h3>Upcoming Games</h3><div style="padding:0 14px 8px;color:var(--ink2);font-size:12.5px">Click a game to compare the two teams. Times are Eastern.</div>${body}</div>`}
 fetch("schedule.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SCHED=d;renderStats();if(curTab==="home")renderHome()}).catch(()=>{});
 
 // ===== Projected lineups (ESPN lines + Daily Faceoff starting goalies) =====
@@ -723,7 +727,7 @@ function renderPrediction(a,b){
   const keys=["rating","home","rest","lineup","shots"];let dr=0;keys.forEach(k=>{if(comp[k]!=null)dr+=w(k)*comp[k]});const P=eloP(dr);lastPred={a,b,P};
   const pct=v=>(v>=0?"+":"−")+Math.abs(v).toFixed(1)+"%";const pc1=v=>(v*100).toFixed(1)+"%",sv3=v=>v.toFixed(3).replace(/^0/,"");
   const restTxt=r=>r===0?"back-to-back":r+" day"+(r===1?"":"s")+" rest";
-  const names={rating:"Team rating",home:"Home Ice Advantage",rest:"Rest <small style='color:var(--muted);font-weight:400'>(days off since each team's last game — a team playing the second night of back-to-back games is usually more tired)</small>",lineup:"Lineup & goalie changes",shots:"Shooting & save % luck"};
+  const names={rating:"Team Rating",home:"Home Ice Advantage",rest:"Rest <small style='color:var(--muted);font-weight:400'>(days off since each team's last game — a team playing the second night of back-to-back games is usually more tired)</small>",lineup:"Lineup & Goalie Changes",shots:"Shooting & Save % Luck"};
   const PC=pairCols(a,b),ta={color:PC.a.color,badgeText:PC.a.text,line:PC.a.line},tb={color:PC.b.color,badgeText:PC.b.text,line:PC.b.line};const ev=E.eval,old=evalModel();
   const pb=t=>`<span class="badge" style="background:${(t===a?ta:tb).color};color:${(t===a?ta:tb).badgeText}">${t}</span>`;
   const detail={rating:`${pb(a)} <span class="hv">${Math.round(E.R[a])}</span> vs ${pb(b)} <span class="hv">${Math.round(E.R[b])}</span> <small>— a power rating where <span class="avgnote">1500 is a league-average team</span>. It starts each season from the team's results over the last five seasons, with recent seasons counting most (each older season counts about two-thirds as much as the one after it), then moves after every game: up for a win, down for a loss, more for a big margin or an upset. Every 100 points of difference is worth roughly a 64–36 edge on neutral ice.</small>`,
@@ -783,7 +787,7 @@ function renderBacktest(){
     const verdict=Math.abs(edge)<moe?`<span style="color:#8a93a3">Too close to call yet</span>`:edge>0?`<span class="pos">Real signal so far</span>`:`<span class="neg">Worse than a coin flip</span>`;
     const w=Math.min(100,Math.abs(edge)*4);
     return`<tr class="${ref?"ref":""}"><td>${label}<br><small style="color:var(--muted)">Picks: ${rule}</small></td><td>${n}</td><td>${ok}</td><td><b>${acc.toFixed(1)}%</b></td><td><span class="bar" style="width:${w}px;background:${edge>=0?"#26a65b":"#e5484d"}"></span>${edge>=0?"+":""}${edge.toFixed(1)}<small style="color:var(--muted)"> ±${moe.toFixed(1)}</small></td><td class="verdict">${verdict}</td></tr>`};
-  return`<div class="bt"><h3>Backtest: how often did each statistic pick the winner?</h3>
+  return`<div class="bt"><h3>Backtest: How Often Did Each Statistic Pick the Winner?</h3>
   <div class="intro">For each of the ${eligible} games played after both teams had at least ${minGP} games, this checks which team each statistic favoured, using only results from <i>before</i> that game, and whether that team won. A coin flip gets 50%. The ± figure is the 95% margin of error: an edge smaller than that could still be luck.</div>
   <table><tr><th>Statistic</th><th>Games picked</th><th>Correct</th><th>Hit rate</th><th>Edge vs 50%</th><th class="verdict">Verdict</th></tr>
   ${line(["elo","Team rating (main model)","Team with the higher rating, after home ice and rest"])}
@@ -817,7 +821,7 @@ function quickOdds(a,h,d){const E=eloRun();const ra=restDays(a,d),rh=restDays(h,
 function renderHome(){const el=document.getElementById("home");
   const rw=document.getElementById("rinkwrap");if(!rw.firstChild)rw.innerHTML=`<div class="rinkpersp">${rinkSVG()}</div>`;
   const strip=`<i style="background:#2f6fed"></i>`;
-  if(!SCHED||!DATA){el.innerHTML=`<div class="hcontent"><div class="hcard"><div class="hstrip">${strip}</div><h2>Upcoming games</h2><p class="hsub">Loading the schedule…</p></div></div>`;return}
+  if(!SCHED||!DATA){el.innerHTML=`<div class="hcontent"><div class="hcard"><div class="hstrip">${strip}</div><h2>Upcoming Games</h2><p class="hsub">Loading the schedule…</p></div></div>`;return}
   const up=upcoming(),days=[...new Set(up.map(g=>g[0]))],show=days.slice(0,homeDays),cp=cmpPair();
   const f=v=>Math.round(v*100)+"%";
   const body=show.map(d=>`<div class="hday"><div class="hdh">${fdate(d,{weekday:"long",month:"long",day:"numeric"})}<span>${up.filter(g=>g[0]===d).length} games</span></div>`+
@@ -830,15 +834,15 @@ function renderHome(){const el=document.getElementById("home");
         <span class="hgo">Choose this game →</span></button>`}).join("")+`</div>`).join("");
   el.innerHTML=`<div class="hcontent"><div class="hcard">
     <div class="hstrip">${strip}</div>
-    <h2>Upcoming games</h2>
+    <h2>Upcoming Games</h2>
     <p class="hsub">Pick a game to get its full prediction in <b>Game Statistics</b> and the side-by-side comparison in <b>Teams Statistics</b>. Times are Eastern. Quick odds use team rating, home ice and rest; the full prediction adds lineups, goalies and shooting/save-% luck.${cp?` Currently comparing ${mini(cp[0])} at ${mini(cp[1])}.`:""}</p>
     ${body||`<p class="hsub">${noGamesMsg()}</p>`}
     ${days.length>homeDays?`<div class="hmore"><button class="abtn" id="hmore">Show more days (${days.length-homeDays} left)</button></div>`:""}
-    <details class="guide"><summary>How to use this</summary><ol>
+    <details class="guide"><summary>How to Use This</summary><ol>
       <li><b>Pick a game here.</b> This is the only place to choose the two teams to compare.</li>
       <li><b>Game Statistics</b> shows the prediction: each team's win chance, regulation vs overtime/shootout, and what pushes the odds. Switch to <i>Your weights</i> to try your own weighting.</li>
       <li><b>Teams Statistics</b> puts the two teams side by side: form, goalies and game-day lineups. Projected lineups and starting goalies load automatically; use ⇄ to swap one player for a late scratch and the odds update.</li>
-      <li><b>Momentum chart</b> works on its own: tick teams in its list to draw their season lines (up a step for a win, down for a loss) and add trendlines, levels or Fibonacci retracements.</li></ol>
+      <li><b>Momentum Chart</b> works on its own: tick teams in its list to draw their season lines (up a step for a win, down for a loss) and add trendlines, levels or Fibonacci retracements.</li></ol>
       <p class="hnote">Scores and stats refresh every hour as games finish (with a full refresh at midnight and 6 pm Eastern); lineups and starting goalies at 12:15 am and 6:15 pm Eastern. Playoff games appear here too once the playoffs begin. Treat the odds as rough guides — even the best public models pick about 60–64% of single games.</p></details>
   </div></div>`;
   bindPicks(el);const m=el.querySelector("#hmore");if(m)m.onclick=()=>{homeDays+=7;const y=el.scrollTop;renderHome();el.scrollTop=y}}
@@ -867,14 +871,14 @@ function renderLeaders(){const el=document.getElementById("leaders");if(curTab!=
   const pl=(r)=>`<td class="nm">${esc(r.n)}</td><td>${mini(r.tm)}</td>`;
   const card=(title,sub,head,body)=>`<div class="lbc"><h3>${title}</h3><div class="lbs">${sub}</div><table class="lbt"><tr>${head}</tr>${body}</table></div>`;
   el.innerHTML=`<div class="lbwrap">
-    <div class="lbc wide"><div class="lbhead"><h3>NHL standings</h3><div class="seg">${[["div","Division"],["conf","Conference"],["league","League"]].map(([v,l])=>`<button data-lbv="${v}" class="${lbView===v?"on":""}">${l}</button>`).join("")}</div></div>
+    <div class="lbc wide"><div class="lbhead"><h3>NHL Standings</h3><div class="seg">${[["div","Division"],["conf","Conference"],["league","League"]].map(([v,l])=>`<button data-lbv="${v}" class="${lbView===v?"on":""}">${l}</button>`).join("")}</div></div>
       <div class="lbs">Built from every final score (checked against the official standings each morning) · results through ${fdate(DATA.throughDate,{month:"short",day:"numeric"})}. OTL = overtime/shootout losses (1 point). RW = regulation wins (first tiebreaker after points %).</div>
       <table class="lbt st"><tr><th></th><th class="nm">Team</th><th>GP</th><th>W</th><th>L</th><th>OTL</th><th>PTS</th><th>PTS%</th><th>RW</th><th>GF</th><th>GA</th><th>DIFF</th><th>Last 10</th><th>Streak</th></tr>${stTable}</table></div>
-    ${card("Top goal scorers",`Goals · stats as of ${fdate(STATS.updated,{month:"short",day:"numeric"})}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>G/GP</th>`,
+    ${card("Top Goal Scorers",`Goals · stats as of ${fdate(STATS.updated,{month:"short",day:"numeric"})}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>G/GP</th>`,
       goals.map((r,i)=>`<tr><td class="rk">${rank(goals,i,"g")}</td>${pl(r)}<td>${r.gp}</td><td><b>${r.g}</b></td><td>${(r.g/r.gp).toFixed(2)}</td></tr>`).join(""))}
-    ${card("Top players by points",`Goals + assists · stats as of ${fdate(STATS.updated,{month:"short",day:"numeric"})}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
+    ${card("Top Players by Points",`Goals + assists · stats as of ${fdate(STATS.updated,{month:"short",day:"numeric"})}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
       points.map((r,i)=>`<tr><td class="rk">${rank(points,i,"pts")}</td>${pl(r)}<td>${r.gp}</td><td>${r.g??"–"}</td><td>${r.a??(r.g!=null?r.pts-r.g:"–")}</td><td><b>${r.pts}</b></td><td>${sgn(r.pm)}</td></tr>`).join(""))}
-    ${card("Top goaltenders — our rating",`Goals saved per game compared with a league-average goalie (league save % ${L.sv.toFixed(3).replace(/^0/,"")}, ~28.5 shots a game). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots, so a hot start over a few games can't top the list on its own.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Season</th>`,
+    ${card("Top Goaltenders — Our Rating",`Goals saved per game compared with a league-average goalie (league save % ${L.sv.toFixed(3).replace(/^0/,"")}, ~28.5 shots a game). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots, so a hot start over a few games can't top the list on its own.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Season</th>`,
       gk.slice(0,lbN).map((r,i)=>`<tr><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${r.sv.toFixed(3).replace(/^0/,"")}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
   </div>`;
   el.querySelectorAll("[data-lbv]").forEach(b=>b.onclick=()=>{lbView=b.dataset.lbv;store.set("lbView",lbView);renderLeaders()})}
@@ -957,23 +961,23 @@ function clinchedSet(){const set=new Set(poActive()&&PO.clinched?PO.clinched:[])
 function lastRegDate(){const d=SCHED&&SCHED.games.length?SCHED.games.reduce((m,g)=>g[0]>m?g[0]:m,""):"";return d||SEASON.regEnd||""}
 function lockHTML(what){const cl=clinchedSet(),st=standings().sort(stSort),end=lastRegDate();
   const conf=c=>{const tms=st.filter(r=>CONFS[c].includes(r.div)).map(r=>r.tm).filter(t=>cl.has(t));
-    return`<div><h4>${c==="W"?"Western":"Eastern"} Conference · ${tms.length} of 8 clinched</h4><div class="clbar"><i style="width:${tms.length/8*100}%"></i></div><div class="cllist">${tms.map(mini).join("")||`<span style="color:var(--muted);font-size:12.5px">No team has clinched yet</span>`}</div></div>`};
-  return`<div class="pocard"><div class="lockhd"><span class="big">🔒</span><div><h2>${esc(SEASON.season)} Playoffs — ${what} locked</h2>
+    return`<div><h4>${c==="W"?"Western":"Eastern"} Conference · ${tms.length} of 8 Clinched</h4><div class="clbar"><i style="width:${tms.length/8*100}%"></i></div><div class="cllist">${tms.map(mini).join("")||`<span style="color:var(--muted);font-size:12.5px">No team has clinched yet</span>`}</div></div>`};
+  return`<div class="pocard"><div class="lockhd"><span class="big">🔒</span><div><h2>${esc(SEASON.season)} Playoffs — ${what} Locked</h2>
     <p>This tab unlocks automatically once all 16 playoff teams are known${end?` (the regular season ends ${fdate(end,{month:"long",day:"numeric"})})`:""}. The bracket then fills in by itself as each series is decided.</p></div></div>
     <div class="cltr">${conf("W")}${conf("E")}</div>
     <p style="font-size:11.5px;color:var(--muted)">A team counts as clinched here once it can no longer drop out of the top 3 in its division or the top 5 in its conference, so this tracker can run a little behind the NHL's official clinch marks.</p></div>`}
 function renderBracket(){const el=document.getElementById("bracket");if(curTab!=="bracket")return;
   if(!DATA){el.innerHTML=`<div class="nomsg" style="margin-top:80px">Loading…</div>`;return}
-  if(!poUnlocked()){const s=projectedSeeds();el.innerHTML=`<div class="pow">${lockHTML("bracket")}
-      <div class="pocard"><h3>If the playoffs started today</h3><p>Seeded from the current standings (top 3 in each division plus two wild cards per conference). "Our odds" use today's team ratings with home ice to the higher seed in games 1, 2, 5 and 7.</p><div class="brkwrap proj">${bracketHTML(s)}</div></div>
-      ${cupOddsHTML(s,"Stanley Cup odds if the playoffs started today","Each team's chance to reach each round, worked out from our game-by-game odds across every possible path through this bracket.")}</div>`;return}
+  if(!poUnlocked()){const s=projectedSeeds();el.innerHTML=`<div class="pow">${lockHTML("Bracket")}
+      <div class="pocard"><h3>If the Playoffs Started Today</h3><p>Seeded from the current standings (top 3 in each division plus two wild cards per conference). "Our odds" use today's team ratings with home ice to the higher seed in games 1, 2, 5 and 7.</p><div class="brkwrap proj">${bracketHTML(s)}</div></div>
+      ${cupOddsHTML(s,"Stanley Cup Odds If the Playoffs Started Today","Each team's chance to reach each round, worked out from our game-by-game odds across every possible path through this bracket.")}</div>`;return}
   const S=PO.seeds;el.innerHTML=`<div class="pow"><div class="pocard"><h2>${esc(SEASON.season)} Stanley Cup Playoffs</h2>
       <p>Each series is best of seven; the higher seed has home ice in games 1, 2, 5 and 7 (from round 2 on, the team with the better regular-season record). Winners move on automatically once a series is decided. "Our odds" are each team's chance to win the series from the current score.</p>
       <div class="brkwrap">${bracketHTML(S)}</div></div>
-    ${cupOddsHTML(S,"Stanley Cup odds","Each team's chance to reach each round, from the current series scores and our game-by-game odds. ✓ = already there.")}</div>`}
+    ${cupOddsHTML(S,"Stanley Cup Odds","Each team's chance to reach each round, from the current series scores and our game-by-game odds. ✓ = already there.")}</div>`}
 function renderPoLeaders(){const el=document.getElementById("poleaders");if(curTab!=="poleaders")return;
   if(!DATA){el.innerHTML=`<div class="nomsg" style="margin-top:80px">Loading…</div>`;return}
-  if(!poUnlocked()){el.innerHTML=`<div class="pow">${lockHTML("leaders")}<div class="pocard"><h3>What you'll see here</h3><p>Playoff-only leaderboards — top goal scorers, top players by points, and goaltenders ranked by our rating — kept separate from regular-season totals and updated after every playoff game.</p></div></div>`;return}
+  if(!poUnlocked()){el.innerHTML=`<div class="pow">${lockHTML("Leaders")}<div class="pocard"><h3>What You'll See Here</h3><p>Playoff-only leaderboards — top goal scorers, top players by points, and goaltenders ranked by our rating — kept separate from regular-season totals and updated after every playoff game.</p></div></div>`;return}
   const sk=[],gk=[];for(const tm in(PO.skaters||{}))for(const x of PO.skaters[tm])sk.push({n:x[0],tm,pos:x[1],gp:x[2],pts:x[3],pm:x[4],g:x[5],a:x[6]});
   for(const tm in(PO.goalies||{}))for(const g of PO.goalies[tm])gk.push({n:g[0],tm,gp:g[1],sv:g[2]});
   if(!sk.length&&!gk.length){el.innerHTML=`<div class="pow"><div class="pocard"><h2>${esc(SEASON.season)} Playoff Leaders</h2><p>Playoff stats appear here after the first playoff games are played.</p></div></div>`;return}
@@ -987,11 +991,11 @@ function renderPoLeaders(){const el=document.getElementById("poleaders");if(curT
   const card=(title,sub,head,body)=>`<div class="lbc"><h3>${title}</h3><div class="lbs">${sub}</div><table class="lbt"><tr>${head}</tr>${body}</table></div>`;
   const asOf=PO.statsUpdated?` · as of ${fdate(PO.statsUpdated,{month:"short",day:"numeric"})}`:"";
   el.innerHTML=`<div class="pow" style="padding-bottom:0"><div class="pocard"><h2>${esc(SEASON.season)} Playoff Leaders</h2><p>Playoff games only. Faded rows are players whose team has been eliminated.</p></div></div><div class="lbwrap">
-    ${card("Top goal scorers",`Playoff goals${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>G/GP</th>`,
+    ${card("Top Goal Scorers",`Playoff goals${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>G/GP</th>`,
       goals.map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${rank(goals,i,"g")}</td>${pl(r)}<td>${r.gp}</td><td><b>${r.g}</b></td><td>${r.gp?(r.g/r.gp).toFixed(2):"–"}</td></tr>`).join(""))}
-    ${card("Top players by points",`Playoff goals + assists${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
+    ${card("Top Players by Points",`Playoff goals + assists${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
       points.map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${rank(points,i,"pts")}</td>${pl(r)}<td>${r.gp}</td><td>${r.g??"–"}</td><td>${r.a??(r.g!=null?r.pts-r.g:"–")}</td><td><b>${r.pts}</b></td><td>${sgn(r.pm)}</td></tr>`).join(""))}
-    ${card("Top goaltenders — our rating",`Playoff goals saved per game compared with an average playoff goalie (playoff save % ${lsv.toFixed(3).replace(/^0/,"")}). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Playoffs</th>`,
+    ${card("Top Goaltenders — Our Rating",`Playoff goals saved per game compared with an average playoff goalie (playoff save % ${lsv.toFixed(3).replace(/^0/,"")}). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Playoffs</th>`,
       gk.slice(0,lbN).map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${r.sv.toFixed(3).replace(/^0/,"")}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
   </div>`}
 // label for a playoff game in Upcoming games, e.g. "Round 1 · Game 3 · FLA leads 2–1"
@@ -1104,7 +1108,7 @@ function renderStats(){
   el2.innerHTML=`<div class="mband"><div class="mA"><span class="mab">${p[0]}</span><span class="mnm">${esc(ta.name)}</span></div><div class="mvs">VS</div><div class="mB"><span class="mnm">${esc(tb.name)}</span><span class="mab">${p[1]}</span></div></div><div class="shead"><h2>Teams Statistics</h2><span class="sub">Side-by-side team, goalie and lineup stats · as of ${new Date(STATS.updated+"T12:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})} · <a href="#stats">see the prediction in Game Statistics</a></span></div>
   <div class="sgrid">
     <div class="thl"></div><div class="th va">${a.head}</div><div class="th vb">${b.head}</div>
-    ${sec("Team form")}
+    ${sec("Team Form")}
     ${row("1. Momentum","mom","Current streak; a tie moves it 0.5 toward 0 · last 5 shown")}
     ${row("2. Goals for vs. against ratio","ratio","(F − A) ÷ (F + A)")}
     ${row("3. Goals for per game","gfg","GF/G")}
