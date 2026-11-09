@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pools · NHL Win/Loss Lines</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--soft:#f1f3f6;--line:#e3e6eb;--ink:#1c2230;--ink2:#4b5466;--muted:#8a93a3;--acc:#2f6fed;--ok:#2b8a3e;--bad:#d7191f}
+body.dark{--bg:#11151b;--card:#1d232c;--soft:#252c37;--line:#2e3642;--ink:#e8ecf2;--ink2:#b5bdc9;--muted:#7f8a99;--acc:#6f9bff;--ok:#51cf66;--bad:#ff6b6b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--card);border-bottom:1px solid var(--line)}
+.top a.btn,.top button{font:inherit;font-size:13.5px;font-weight:700;padding:7px 13px;border-radius:8px;text-decoration:none;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.top a.back{background:#ffd43b;color:#1c2230;border-color:#ffd43b}
+.top .ttl{font-weight:800;font-size:17px;margin-left:6px}.top .sp{flex:1}
+main{max-width:1040px;margin:22px auto 60px;padding:0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin-bottom:16px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin:0 0 6px}h3{font-size:16px;margin:0 0 8px}
+p{color:var(--ink2);margin:6px 0}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
+.choice{display:block;text-align:left;font:inherit;color:var(--ink);background:var(--soft);border:2px solid var(--line);border-radius:12px;padding:18px;cursor:pointer;text-decoration:none}
+.choice:hover{border-color:var(--acc)}.choice b{display:block;font-size:18px;margin-bottom:4px}.choice span{color:var(--ink2);font-size:13.5px}
+.choice.gold{background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;border-color:#c99a1e}.choice.gold span{color:#5a4300}
+.choice.locked{opacity:.5;cursor:not-allowed;filter:grayscale(1)}
+.big{font-size:44px;font-weight:900;letter-spacing:.18em;font-variant-numeric:tabular-nums}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
+.copyrow input{flex:1;min-width:220px;font:inherit;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
+.b{font:inherit;font-weight:700;padding:9px 16px;border-radius:8px;border:0;cursor:pointer;background:var(--acc);color:#fff}
+.b.red{background:#d7191f}.b.ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line)}.b:disabled{opacity:.45;cursor:not-allowed}
+.codein{font:inherit;font-size:28px;font-weight:800;letter-spacing:.3em;width:220px;text-align:center;padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--soft);color:var(--ink)}
+.err{color:var(--bad);font-weight:600;margin-top:8px}.okm{color:var(--ok);font-weight:700}
+.formula{background:var(--soft);border-left:4px solid #e9bd3f;border-radius:8px;padding:10px 14px;margin:10px 0;font-size:14px}
+.formula b{color:var(--ink)}
+.namebox input{font:inherit;font-size:17px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(360px,100%)}
+.warn{display:inline-block;margin-left:10px;color:var(--bad);font-weight:700;font-size:13.5px}
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+.grp{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.grp h4{margin:0;padding:9px 12px;background:var(--soft);font-size:14px;display:flex;justify-content:space-between}
+.grp h4 .n{font-weight:800}.grp h4 .n.done{color:var(--ok)}
+.grp .lst{max-height:320px;overflow:auto}
+.grp label{display:flex;align-items:center;gap:8px;padding:5px 12px;border-top:1px solid var(--line);font-size:13.5px;cursor:pointer}
+.grp label:hover{background:var(--soft)}.grp label.off{opacity:.35;cursor:not-allowed}
+.grp label .s{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.badge{display:inline-block;min-width:34px;text-align:center;font-size:10.5px;font-weight:800;padding:1px 4px;border-radius:4px;color:#fff}
+.search{font:inherit;padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(320px,100%)}
+.sticky{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:12px 24px;margin:16px -24px -22px;border-radius:0 0 12px 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sticky .sum{flex:1;font-size:13.5px;color:var(--ink2)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20}
+.modal .box{background:var(--card);border-radius:12px;padding:24px;max-width:460px;width:92%;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}th{color:var(--muted);font-size:12px;font-weight:700}
+td.l,th.l{text-align:left}
+tr.me td{background:rgba(233,189,63,.18)}
+.nm{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--acc);cursor:pointer;text-decoration:underline dotted}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:10px}
+.picks .pg{background:var(--soft);border-radius:8px;padding:8px 10px;font-size:13.5px}
+.picks .pg div{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+.muted{color:var(--muted)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--soft);border:1px solid var(--line)}
+@media (max-width:600px){.big{font-size:34px}.card{padding:18px}}
+</style>
+</head>
+<body>
+<div class="top"><a class="btn back" href="index.html">← Back to the app</a><a class="btn" href="#/">🏒 Pools</a><span class="sp"></span><button id="modebtn">☀ Light</button></div>
+<main id="app"><div class="card"><p>Loading…</p></div></main>
+<script>
+// ---------- basics ----------
+const $=s=>document.querySelector(s);const app=$("#app");
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="nhlwl:darkMode2";let dark=true;try{const v=sessionStorage.getItem(KEY);if(v!=null)dark=JSON.parse(v)}catch(e){}
+function applyMode(){document.body.classList.toggle("dark",dark);$("#modebtn").textContent=dark?"☀ Light":"☾ Dark"}
+$("#modebtn").onclick=()=>{dark=!dark;try{sessionStorage.setItem(KEY,JSON.stringify(dark))}catch(e){}applyMode()};applyMode();
+const TEAMS={ANA:["Anaheim Ducks","#f47a38"],BOS:["Boston Bruins","#c69214"],BUF:["Buffalo Sabres","#003087"],CGY:["Calgary Flames","#c8102e"],CAR:["Carolina Hurricanes","#ce1126"],CHI:["Chicago Blackhawks","#cf0a2c"],COL:["Colorado Avalanche","#6f263d"],CBJ:["Columbus Blue Jackets","#002654"],DAL:["Dallas Stars","#006847"],DET:["Detroit Red Wings","#ce1126"],EDM:["Edmonton Oilers","#ff4c00"],FLA:["Florida Panthers","#c8102e"],LAK:["Los Angeles Kings","#111111"],MIN:["Minnesota Wild","#154734"],MTL:["Montréal Canadiens","#af1e2d"],NSH:["Nashville Predators","#b8860b"],NJD:["New Jersey Devils","#ce1126"],NYI:["New York Islanders","#00539b"],NYR:["New York Rangers","#0038a8"],OTT:["Ottawa Senators","#c52032"],PHI:["Philadelphia Flyers","#f74902"],PIT:["Pittsburgh Penguins","#b8970b"],SJS:["San Jose Sharks","#006d75"],SEA:["Seattle Kraken","#355464"],STL:["St. Louis Blues","#002f87"],TBL:["Tampa Bay Lightning","#002868"],TOR:["Toronto Maple Leafs","#00205b"],UTA:["Utah Mammoth","#3d6fa6"],VAN:["Vancouver Canucks","#00205b"],VGK:["Vegas Golden Knights","#8a7650"],WSH:["Washington Capitals","#c8102e"],WPG:["Winnipeg Jets","#041e42"]};
+const bdg=t=>`<span class="badge" style="background:${(TEAMS[t]||["","#555"])[1]}">${esc(t)}</span>`;
+const tname=t=>(TEAMS[t]||[t])[0];
+const NEED={C:2,LW:2,RW:2,D:4,G:2,T:5};
+const GNAME={C:"Centres",LW:"Left Wings",RW:"Right Wings",D:"Defence",G:"Goaltenders",T:"Teams"};
+const FORMULA=`<div class="formula"><b>Score</b> = (total points of your 10 forwards and defence) + (total saves of your 2 goaltenders ÷ 20) + (total playoff wins of your 5 teams). Highest score wins.</div>`;
+const fmtD=ms=>new Date(ms).toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
+function posGroups(pos){const g=new Set();String(pos||"").toUpperCase().split(/[^A-Z]+/).forEach(p=>{if(p==="C")g.add("C");else if(p==="LW")g.add("LW");else if(p==="RW")g.add("RW");else if(p==="W"){g.add("LW");g.add("RW")}else if(p==="F"){g.add("C");g.add("LW");g.add("RW")}else if(p==="D")g.add("D")});return[...g]}
+const lastName=n=>{const p=String(n).replace(/\s+(Jr\.?|Sr\.?|II|III)$/i,"").trim().split(/\s+/);return p[p.length-1]};
+const byLast=(a,b)=>lastName(a.n).localeCompare(lastName(b.n),"en",{sensitivity:"base"})||a.n.localeCompare(b.n);
+
+// ---------- data ----------
+const J=f=>fetch(f,{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json()}).catch(()=>null);
+let CFG=null,SEASON=null,PO=null,STATS=null,LINEUPS=null;const ARCH={};
+const ready=Promise.all([J("pool-config.json"),J("season.json"),J("playoffs.json"),J("stats.json"),J("lineups.json")]).then(([c,s,p,st,l])=>{CFG=c||{};SEASON=s||{};PO=p;STATS=st;LINEUPS=l});
+async function api(params,post){
+  if(!CFG||!CFG.api)throw new Error("Pools aren't switched on yet — the pool service still needs to be connected.");
+  let r;
+  if(post)r=await fetch(CFG.api,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(params)});
+  else r=await fetch(CFG.api+"?"+new URLSearchParams(params));
+  const j=await r.json().catch(()=>({ok:false,error:"The pool service did not answer properly. Please try again."}));
+  return j}
+// playoff data for a pool's season (current season from playoffs.json, older seasons from the archive)
+async function poFor(season){if(PO&&PO.season===season)return PO;if(!(season in ARCH)){const a=await J("archive/"+season+".json");ARCH[season]=a&&a.playoffs?a.playoffs:null}return ARCH[season]}
+function playoffTeams(po){if(!po||!po.seeds)return[];return["W","E"].flatMap(c=>po.seeds[c].flat())}
+
+// ---------- scoring ----------
+function scorer(po){
+  const sk={},skN={},gk={},gkN={},wins={};
+  if(po){for(const t in(po.skaters||{}))for(const r of po.skaters[t]){sk[t+"|"+r[0]]=r[3]||0;(skN[r[0]]=skN[r[0]]||[]).push(r[3]||0)}
+    for(const t in(po.goalies||{}))for(const r of po.goalies[t]){const sv=r[3]!=null?r[3]:Math.round((r[1]||0)*28.5*(r[2]||0));gk[t+"|"+r[0]]=sv;(gkN[r[0]]=gkN[r[0]]||[]).push(sv)}
+    for(const g of(po.games||[])){const w=g[4]>g[2]?g[3]:g[1];wins[w]=(wins[w]||0)+1}}
+  const one=(map,byN,id)=>{if(id in map)return map[id];const n=id.slice(id.indexOf("|")+1);return byN[n]&&byN[n].length===1?byN[n][0]:0};
+  return picks=>{const d={sk:0,sv:0,tw:0,items:{}};
+    for(const k of["C","LW","RW","D"])for(const id of picks[k]||[]){const v=one(sk,skN,id);d.items[id]=v;d.sk+=v}
+    for(const id of picks.G||[]){const v=one(gk,gkN,id);d.items[id]=v;d.sv+=v}
+    for(const t of picks.T||[]){const v=wins[t]||0;d.items[t]=v;d.tw+=v}
+    d.total=Math.round((d.sk+d.sv/20+d.tw)*100)/100;return d}}
+
+// ---------- views ----------
+function view(h){app.innerHTML=h;window.scrollTo(0,0)}
+function route(){const h=(location.hash||"#/").slice(1).split("/").filter(Boolean);
+  ready.then(()=>{const [v,a]=h;
+    if(!v)return home();if(v==="start")return start();if(v==="created")return created(a);if(v==="enter")return enter(a);
+    if(v==="form")return form(a);if(v==="rank")return rank(a);if(v==="board")return board(a);home()})}
+window.addEventListener("hashchange",route);route();
+
+function home(){view(`<div class="card"><h1>🏒 Hockey Pools</h1><p>Free to enter. Start a pool for your friends, family or clients, share the 6-digit Pool Code, and follow the standings as the games are played.</p>
+  <div class="choices">
+    <a class="choice gold" href="#/start"><b>Start a pool</b><span>Become the pool's admin and get a Pool Code to share.</span></a>
+    <a class="choice" href="#/enter"><b>Enter a pool</b><span>Have a Pool Code? Make your picks here.</span></a>
+    <a class="choice" href="#/rank"><b>Check your ranking</b><span>See a pool's leaderboard and everyone's picks.</span></a>
+  </div></div>${noApi()}`)}
+const noApi=()=>CFG&&CFG.api?"":`<div class="card"><p class="err">Pools are almost ready: the pool service still has to be connected, so starting or entering a pool won't work yet.</p></div>`;
+
+function start(){const reg=SEASON.season||"";view(`<div class="card"><h2>Start a Pool</h2><p>Choose the kind of pool. You'll get a Pool Code to send to the people you invite.</p>
+  <div class="choices">
+    <div class="choice locked" title="Coming in a future season"><b>🔒 Regular Season</b><span>Coming in a future season.</span></div>
+    <button class="choice gold" id="mkpo"><b>Playoffs</b><span>${esc(reg)} Stanley Cup Playoffs pool.</span></button>
+  </div><div id="msg"></div></div>`);
+  $("#mkpo").onclick=async()=>{const b=$("#mkpo");b.disabled=true;$("#msg").innerHTML=`<p>Creating your pool…</p>`;
+    try{const r=await api({action:"create",type:"playoffs"},true);if(!r.ok)throw new Error(r.error);location.hash="#/created/"+r.code}
+    catch(e){$("#msg").innerHTML=`<p class="err">${esc(e.message)}</p>`;b.disabled=false}}}
+
+function siteUrl(h){return location.href.split("#")[0]+h}
+function created(code){const url=siteUrl("#/enter");const direct=siteUrl("#/enter/"+code);
+  view(`<div class="card"><h2>Your pool is ready 🎉</h2><p>You're the admin of this ${esc(SEASON.season||"")} playoff pool. Send the Pool Code and the link below to everyone you'd like to invite.</p>
+  <h3 style="margin-top:16px">Pool Code</h3><div class="copyrow"><span class="big" id="cd">${esc(code)}</span><button class="b" data-copy="${esc(code)}">Copy code</button></div>
+  <h3>"Enter a pool" page</h3><div class="copyrow"><input readonly value="${esc(url)}"><button class="b" data-copy="${esc(url)}">Copy link</button></div>
+  <h3>Ready-to-paste invitation</h3><div class="copyrow"><input readonly id="inv" value="${esc(`You're invited to my free NHL playoff pool! Go to ${url} and enter Pool Code ${code}.`)}"><button class="b" data-copy-from="inv">Copy invitation</button></div>
+  <p class="muted">Keep this code — you'll need it to check the pool's leaderboard. Entries close when the first playoff game starts.</p>
+  <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><a class="b ghost" href="#/form/${esc(code)}" style="text-decoration:none">Enter your own picks</a></div></div>`);
+  bindCopy()}
+function bindCopy(){app.querySelectorAll("[data-copy],[data-copy-from]").forEach(b=>b.onclick=async()=>{const t=b.dataset.copy||document.getElementById(b.dataset.copyFrom).value;
+  try{await navigator.clipboard.writeText(t)}catch(e){const i=document.createElement("textarea");i.value=t;document.body.appendChild(i);i.select();document.execCommand("copy");i.remove()}
+  const o=b.textContent;b.textContent="Copied ✓";setTimeout(()=>b.textContent=o,1500)})}
+
+function codeForm(title,sub,go,pre){view(`<div class="card"><h2>${title}</h2><p>${sub}</p>
+  <form id="cf" class="copyrow" style="margin-top:14px"><input class="codein" id="code" inputmode="numeric" maxlength="6" placeholder="••••••" value="${esc(pre||"")}" autocomplete="off"><button class="b" type="submit">Continue →</button></form><div id="msg"></div></div>${noApi()}`);
+  const c=$("#code");c.focus();c.oninput=()=>c.value=c.value.replace(/\D/g,"").slice(0,6);
+  $("#cf").onsubmit=async e=>{e.preventDefault();const v=c.value;if(v.length!==6){$("#msg").innerHTML=`<p class="err">The Pool Code has 6 digits.</p>`;return}
+    $("#msg").innerHTML=`<p>Checking…</p>`;try{const r=await api({action:"pool",code:v});if(!r.ok)throw new Error(r.error);location.hash=go+v}catch(err){$("#msg").innerHTML=`<p class="err">${esc(err.message)}</p>`}}}
+function enter(pre){codeForm("Enter a Pool","Type the 6-digit Pool Code you were given.","#/form/",pre)}
+function rank(pre){codeForm("Check Your Ranking","Type the pool's 6-digit Pool Code to see its leaderboard.","#/board/",pre)}
+
+async function form(code){
+  view(`<div class="card"><p>Loading the pool…</p></div>`);
+  let r;try{r=await api({action:"pool",code})}catch(e){return view(`<div class="card"><p class="err">${esc(e.message)}</p></div>`)}
+  if(!r.ok)return view(`<div class="card"><p class="err">${esc(r.error)}</p><a class="b ghost" href="#/enter" style="text-decoration:none">Try another code</a></div>`);
+  const st=r.status,season=r.pool.season;
+  if(st.state!=="open")return view(`<div class="card"><h2>Pool ${esc(code)} · ${esc(season)} Playoffs</h2><p>${esc(st.message)}</p>${FORMULA}
+    <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a></div></div>`);
+  const po=await poFor(season);const teams=playoffTeams(po);const taken=new Set(r.entries.map(e=>e.name.trim().replace(/\s+/g," ").toLowerCase()));
+  // players on the 16 playoff teams (if a traded player appears on two playoff teams, keep the team whose lineup lists him)
+  const lineupHas=(t,n)=>{const L=LINEUPS&&LINEUPS.teams&&LINEUPS.teams[t];return !!L&&[...(L.F||[]),...(L.D||[])].some(x=>x[0]===n)};
+  const sk=[],gk=[],cnt={};
+  for(const t of teams)for(const x of(STATS.skaters[t]||[]))(cnt[x[0]]=cnt[x[0]]||[]).push(t);
+  for(const t of teams){for(const x of(STATS.skaters[t]||[])){const ts=cnt[x[0]];if(ts.length>1&&ts.some(o=>lineupHas(o,x[0]))&&!lineupHas(t,x[0]))continue;sk.push({id:t+"|"+x[0],n:x[0],t,pos:x[1],gp:x[2],pts:x[3]})}
+    for(const g of(STATS.goalies[t]||[]))gk.push({id:t+"|"+g[0],n:g[0],t,gp:g[1],sv:g[2]})}
+  const groups={C:[],LW:[],RW:[],D:[],G:gk.slice().sort(byLast)};
+  for(const p of sk)for(const g of posGroups(p.pos))groups[g].push(p);
+  for(const g of["C","LW","RW","D"])groups[g].sort(byLast);
+  const tlist=teams.slice().sort((a,b)=>tname(a).localeCompare(tname(b)));
+  const sel={C:[],LW:[],RW:[],D:[],G:[],T:[]};
+  const row=(g,p)=>`<label data-g="${g}" data-id="${esc(p.id)}" data-q="${esc((p.n+" "+p.t+" "+tname(p.t)).toLowerCase())}"><input type="checkbox">${bdg(p.t)} <span>${esc(p.n)}</span><span class="s">${g==="G"?`${p.gp} GP · ${(+p.sv).toFixed(3).replace(/^0/,"")}`:`${esc(p.pos)} · ${p.pts} pts`}</span></label>`;
+  const grp=g=>`<div class="grp"><h4>${GNAME[g]} <span class="n" id="n_${g}">0 / ${NEED[g]}</span></h4><div class="lst">${g==="T"?tlist.map(t=>`<label data-g="T" data-id="${t}" data-q="${esc((t+" "+tname(t)).toLowerCase())}"><input type="checkbox">${bdg(t)} <span>${esc(tname(t))}</span></label>`).join(""):groups[g].map(p=>row(g,p)).join("")||`<p class="muted" style="padding:8px 12px">No players listed.</p>`}</div></div>`;
+  view(`<div class="card"><h2>Entry Form · Pool ${esc(code)}</h2><p>${esc(season)} Stanley Cup Playoffs. Entries close ${st.deadline?`<b>${fmtD(st.deadline)}</b> (when the first playoff game starts)`:"when the first playoff game starts"}.</p>${FORMULA}
+    <div class="namebox" style="margin-top:14px"><h3>Your display name</h3><input id="nm" maxlength="24" placeholder="e.g. PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name.</span><div id="nmmsg"></div></div>
+    <h3 style="margin-top:18px">Your picks</h3><p>Choose 2 centres, 2 left wings, 2 right wings, 4 defence, 2 goaltenders and 5 teams. Players are listed by position, sorted by last name; a player listed at more than one position can only be picked once.</p>
+    <input class="search" id="q" placeholder="Search players or teams…">
+    <div class="picker">${["C","LW","RW","D","G","T"].map(grp).join("")}</div>
+    <div class="sticky"><span class="sum" id="sum"></span><button class="b red" id="go" disabled>Enter</button></div></div>`);
+  const used=()=>new Set(Object.values(sel).flat());
+  function refresh(){const u=used();
+    app.querySelectorAll("label[data-g]").forEach(l=>{const g=l.dataset.g,id=l.dataset.id,cb=l.querySelector("input"),on=sel[g].includes(id);cb.checked=on;
+      const off=!on&&(sel[g].length>=NEED[g]||(g!=="T"&&u.has(id)));cb.disabled=off;l.classList.toggle("off",off)});
+    let done=true;for(const g in NEED){const n=sel[g].length;const el=$("#n_"+g);el.textContent=`${n} / ${NEED[g]}`;el.classList.toggle("done",n===NEED[g]);if(n!==NEED[g])done=false}
+    const nm=$("#nm").value.trim().replace(/\s+/g," ");let nmOk=nm.length>=2&&!/[<>]/.test(nm);
+    if(nm&&taken.has(nm.toLowerCase())){nmOk=false;$("#nmmsg").innerHTML=`<p class="err">That name is already taken in this pool.</p>`}else $("#nmmsg").innerHTML="";
+    const left=Object.keys(NEED).filter(g=>sel[g].length<NEED[g]).map(g=>`${NEED[g]-sel[g].length} ${GNAME[g].toLowerCase()}`);
+    $("#sum").textContent=!nmOk?"Enter a display name (2–24 characters) that nobody in this pool is using.":left.length?"Still to pick: "+left.join(", ")+".":"All set — press Enter to submit.";
+    $("#go").disabled=!(done&&nmOk)}
+  app.querySelectorAll("label[data-g]").forEach(l=>l.querySelector("input").onchange=e=>{const g=l.dataset.g,id=l.dataset.id;
+    if(e.target.checked){if(sel[g].length<NEED[g])sel[g].push(id)}else sel[g]=sel[g].filter(x=>x!==id);refresh()});
+  $("#nm").oninput=refresh;
+  $("#q").oninput=()=>{const q=$("#q").value.trim().toLowerCase();app.querySelectorAll("label[data-g]").forEach(l=>l.style.display=!q||l.dataset.q.includes(q)?"":"none")};
+  $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p>`,async()=>{
+    const b=$("#go");b.disabled=true;$("#sum").textContent="Sending your entry…";
+    try{const name=$("#nm").value.trim().replace(/\s+/g," ");const res=await api({action:"enter",code,name,picks:sel},true);
+      if(!res.ok)throw new Error(res.error);
+      try{sessionStorage.setItem("nhlwl:poolme:"+code,JSON.stringify(res.name))}catch(e){}
+      location.hash="#/board/"+code}
+    catch(e){$("#sum").innerHTML=`<span class="err">${esc(e.message)}</span>`;b.disabled=false}});
+  refresh()}
+
+function confirmBox(html,yes){const m=document.createElement("div");m.className="modal";
+  m.innerHTML=`<div class="box">${html}<div class="row"><button class="b ghost" id="no">No, go back</button><button class="b red" id="yes">Yes, enter</button></div></div>`;
+  document.body.appendChild(m);m.querySelector("#no").onclick=()=>m.remove();m.querySelector("#yes").onclick=()=>{m.remove();yes()}}
+
+async function board(code){
+  view(`<div class="card"><p>Loading the leaderboard…</p></div>`);
+  let r;try{r=await api({action:"pool",code})}catch(e){return view(`<div class="card"><p class="err">${esc(e.message)}</p></div>`)}
+  if(!r.ok)return view(`<div class="card"><p class="err">${esc(r.error)}</p><a class="b ghost" href="#/rank" style="text-decoration:none">Try another code</a></div>`);
+  const season=r.pool.season,po=await poFor(season),score=scorer(po);let me=null;try{me=JSON.parse(sessionStorage.getItem("nhlwl:poolme:"+code))}catch(e){}
+  const rows=r.entries.map(e=>({e,s:e.picks?score(e.picks):null}));
+  if(r.picksVisible)rows.sort((a,b)=>b.s.total-a.s.total||a.e.name.localeCompare(b.e.name));else rows.sort((a,b)=>a.e.name.localeCompare(b.e.name));
+  let rk=0,prev=null;rows.forEach((x,i)=>{const t=x.s?x.s.total:null;if(t!==prev){rk=i+1;prev=t}x.rk=rk});
+  const st=r.status;const head=st.state==="open"?`<p><span class="pill">Open for entries</span> Entries close ${st.deadline?fmtD(st.deadline):"when the first playoff game starts"}. Everyone's picks are revealed once entries close.</p>`
+    :st.state==="notyet"?`<p><span class="pill">Waiting for the playoffs</span> ${esc(st.message)}</p>`:`<p><span class="pill">Entries closed</span> Scores update automatically as playoff games are played${po&&po.statsUpdated?` (player stats as of ${esc(po.statsUpdated)})`:""}.</p>`;
+  const tbl=rows.length?`<table><tr><th>#</th><th class="l">Name</th>${r.picksVisible?"<th>Skater pts</th><th>Saves ÷ 20</th><th>Team wins</th><th>Score</th>":"<th>Entered</th>"}</tr>
+    ${rows.map((x,i)=>`<tr class="${me&&me===x.e.name?"me":""}"><td>${r.picksVisible?x.rk:i+1}</td><td class="l">${r.picksVisible?`<button class="nm" data-i="${i}">${esc(x.e.name)}</button>`:esc(x.e.name)}${me&&me===x.e.name?" <span class=pill>you</span>":""}</td>
+      ${r.picksVisible?`<td>${x.s.sk}</td><td>${(x.s.sv/20).toFixed(2)}</td><td>${x.s.tw}</td><td><b>${x.s.total.toFixed(2)}</b></td>`:`<td>${x.e.entered?esc(new Date(x.e.entered).toLocaleDateString("en-CA",{month:"short",day:"numeric"})):""}</td>`}</tr>
+      <tr id="pk${i}" hidden><td colspan="6" class="l"></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`;
+  view(`<div class="card"><h2>Pool Leaderboard · ${esc(code)}</h2><p>${esc(season)} Stanley Cup Playoffs · ${rows.length} ${rows.length===1?"entry":"entries"}</p>${head}${FORMULA}
+    ${r.picksVisible?`<p class="muted">Click a name to see that entry's picks.</p>`:""}${tbl}
+    <div class="copyrow" style="margin-top:14px">${st.state==="open"?`<a class="b" href="#/form/${esc(code)}" style="text-decoration:none">Enter this pool</a>`:""}<button class="b ghost" id="rf">Refresh</button></div></div>`);
+  $("#rf").onclick=()=>board(code);
+  app.querySelectorAll(".nm").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,tr=$("#pk"+i);if(!tr.hidden){tr.hidden=true;return}
+    const x=rows[i],P=x.e.picks,S=x.s;const nmOf=id=>id.slice(id.indexOf("|")+1),tmOf=id=>id.slice(0,id.indexOf("|"));
+    const pg=(g,unit)=>`<div class="pg"><b>${GNAME[g]}</b>${(P[g]||[]).map(id=>`<div><span>${g==="T"?bdg(id)+" "+esc(tname(id)):bdg(tmOf(id))+" "+esc(nmOf(id))}</span><span>${S.items[id]||0} ${unit}</span></div>`).join("")}</div>`;
+    tr.firstElementChild.innerHTML=`<div class="picks">${pg("C","pts")}${pg("LW","pts")}${pg("RW","pts")}${pg("D","pts")}${pg("G","saves")}${pg("T","wins")}</div>`;tr.hidden=false})}
+</script>
+</body>
+</html>
