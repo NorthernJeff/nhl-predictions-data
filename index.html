@@ -1,10 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>/* The old GitHub Pages address forwards to the main site on Cloudflare (same page). */if(/github\.io$/i.test(location.hostname)){location.replace("https://nhl-predictions-data.jefflaberge.workers.dev"+location.pathname.replace(/^\/nhl-predictions-data/,"")+location.search+location.hash)}</script>
+<script>/* The old GitHub Pages address forwards to the main site on puck-off.com (same page). */if(/github\.io$/i.test(location.hostname)){location.replace("https://puck-off.com"+location.pathname.replace(/^\/nhl-predictions-data/,"").replace(/(index)?\.html$/,"")+location.search+location.hash)}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NHL 2026-27 Win/Loss Lines</title>
+<title>NHL Predictions 2026-27: Win Probabilities, Standings &amp; Playoff Odds | Puck-Off</title>
+<meta name="description" content="Free NHL predictions for every game: win probabilities, team momentum charts, standings, points leaders, playoff bracket and Stanley Cup odds. Updated hourly.">
+<link rel="canonical" href="https://puck-off.com/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#11151b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Puck-Off">
+<meta property="og:title" content="Puck-Off · NHL Predictions &amp; Win Probabilities">
+<meta property="og:description" content="Win probabilities for every NHL game, momentum charts, standings, playoff bracket and Stanley Cup odds — plus free hockey pools.">
+<meta property="og:url" content="https://puck-off.com/">
+<meta property="og:image" content="https://puck-off.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://puck-off.com/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"Puck-Off","alternateName":"Puck-Off Hockey Predictions","url":"https://puck-off.com/"},{"@type":"WebApplication","name":"Puck-Off NHL Predictions","url":"https://puck-off.com/","applicationCategory":"SportsApplication","operatingSystem":"Any","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Win probabilities for every NHL game, team momentum charts, standings, points leaders, playoff bracket, Stanley Cup odds and free hockey pools."}]}</script>
+
 <style>
 :root{--card:#fff;--soft:#eef1f5;--sel:#e8effd;--line2:#eef0f3;--bg:#ffffff;--panel:#f7f8fa;--panel2:#ffffff;--line:#e3e6eb;--ink:#1c2230;--ink2:#5b6475;--muted:#8a93a3;--win:#26a65b;--loss:#e5484d;--tie:#2f6fed;--acc:#2f6fed}
 *{box-sizing:border-box}
@@ -285,7 +302,7 @@ nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opac
 .ser .sf b{color:var(--ink)}
 .cupc{display:flex;flex-direction:column;justify-content:center;gap:8px}
 .champ{text-align:center;padding:10px;border-radius:10px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;font-weight:800}
-.hg .poline{grid-column:1/-1;margin:-2px 0 -4px}.poolbtn{margin-left:12px;font-weight:800;font-size:12.5px;padding:5px 13px;border-radius:999px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00!important;text-decoration:none;box-shadow:inset 0 0 0 1px #c99a1e;white-space:nowrap}.poolbtn:hover{filter:brightness(1.06)}footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}.potab td.nm{text-align:left}.potab th.nm{text-align:left}.pob{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:7px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;margin-right:6px}
+.hg .poline{grid-column:1/-1;margin:-2px 0 -4px}.poolbtn{margin-left:12px;font-weight:800;font-size:12.5px;padding:5px 13px;border-radius:999px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00!important;text-decoration:none;box-shadow:inset 0 0 0 1px #c99a1e;white-space:nowrap}.poolbtn:hover{filter:brightness(1.06)}footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}footer a.flink{font-weight:700;white-space:nowrap}.potab td.nm{text-align:left}.potab th.nm{text-align:left}.pob{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:7px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;margin-right:6px}
 .lbwrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px;align-items:start}
 .lbc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 12px 8px;min-width:0}
 .lbc.wide{grid-column:1/-1}.lbc h3{margin:0 0 3px;font-size:15px}.lbhead{display:flex;align-items:center;gap:10px}.lbhead h3{margin-right:auto}
@@ -359,6 +376,8 @@ nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opac
   <span>Data: game results from <a href="https://www.hockey-reference.com/leagues/NHL_2027_games.html">Hockey-Reference</a> (official NHL data), checked against <a href="https://www.nhl.com/standings">NHL standings</a>. Refreshed hourly.</span>
   <span id="cnt"></span>
   <a class="legal" href="legal.html">Legal Disclaimer</a>
+  <a class="flink" href="/nhl-predictions">NHL Predictions Today</a>
+  <a class="flink" href="/nhl-playoff-pool">Free NHL Playoff Pool</a>
 </footer>
 </div>
 <script>
@@ -896,7 +915,7 @@ function poActive(){return !!(PO&&PO.season===SEASON.season)}
 function poGames(){return poActive()&&PO.games?PO.games:[]}
 function poUnlocked(){return poActive()&&!!PO.seeds}
 function updateTitle(){const ph=SEASON.phase==="playoffs"?"Playoffs":SEASON.phase==="offseason"?"Season":"Regular Season";
-  const h=document.getElementById("ttl");if(h)h.textContent=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`;document.title=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`}
+  const h=document.getElementById("ttl");if(h)h.textContent=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`;document.title=SEASON.phase==="playoffs"?`NHL Playoff Predictions ${SEASON.season}: Bracket & Stanley Cup Odds | Puck-Off`:`NHL Predictions ${SEASON.season}: Win Probabilities, Standings & Playoff Odds | Puck-Off`}
 function updatePoTabs(){document.querySelectorAll("nav.tabs a.po").forEach(a=>{a.classList.toggle("locked",!poUnlocked());a.title=poUnlocked()?"":"Unlocks once all 16 playoff teams are known"})}
 function refreshAll(){_eloCache=null;_brCache=null;updateTitle();updatePoTabs();if(!DATA)return;renderStats();if(curTab==="home")renderHome();renderLeaders();renderBracket();renderPoLeaders()}
 fetch("season.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SEASON=Object.assign({archives:[]},d);
