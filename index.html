@@ -255,6 +255,34 @@ body.dark .otv,body.dark .otv>span{color:#b3a2f5}body.dark .otv b{color:#c6b8ff}
 
 nav.tabs a[data-tab=leaders]{background:#e03131;color:#fff!important}
 #paneLeaders{flex-direction:column}#leaders{flex:1;overflow:auto;background:var(--panel)}
+#paneBracket,#panePoLeaders{flex-direction:column}#bracket,#poleaders{flex:1;overflow:auto;background:var(--panel)}
+nav.tabs a.po.silver{margin-left:auto;background:linear-gradient(180deg,#f8f9fa,#c3c9d1);box-shadow:inset 0 0 0 1px #aab2bd}
+nav.tabs a.po.gold{background:linear-gradient(180deg,#fff4c2,#e9bd3f);box-shadow:inset 0 0 0 1px #c99a1e}
+nav.tabs a.po .lk{display:none}nav.tabs a.po.locked .lk{display:inline}
+nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opacity:.8}
+.pow{padding:14px;display:flex;flex-direction:column;gap:14px}
+.pocard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.pocard h2{margin:0 0 4px;font-size:18px}.pocard h3{margin:0 0 6px;font-size:15px}.pocard p{margin:4px 0;color:var(--ink2);font-size:13px;line-height:1.45}
+.lockhd{display:flex;align-items:center;gap:12px}.lockhd .big{font-size:30px}
+.cltr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}.cltr h4{margin:0 0 6px;font-size:13px}
+.clbar{height:8px;border-radius:5px;background:var(--soft);overflow:hidden;margin:4px 0 8px}.clbar i{display:block;height:100%;background:linear-gradient(90deg,#c3c9d1,#e9bd3f)}
+.cllist{display:flex;flex-wrap:wrap;gap:5px}.cllist .badge{font-size:11px}
+.brk{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:10px;min-width:1120px;align-items:stretch}
+.brk .col{display:flex;flex-direction:column}.brk .colb{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.brk .colh{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:center;margin-bottom:2px}
+.brkwrap{overflow-x:auto;padding-bottom:4px}.brkwrap.proj{opacity:.8}
+.ser{border:1px solid var(--line);border-radius:9px;background:var(--card);font-size:12.5px;overflow:hidden}
+.ser .sr{display:flex;align-items:center;gap:6px;padding:6px 8px;border-left:4px solid transparent}
+.ser .sr+.sr{border-top:1px solid var(--line2)}
+.ser .sd{font-size:10.5px;color:var(--muted);width:24px}.ser .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ser .wn{font-weight:800;font-size:15px;min-width:14px;text-align:right}
+.ser .sr.win{font-weight:700}.ser .sr.out{opacity:.45}
+.ser .tbd{color:var(--muted);font-style:italic;font-size:11.5px}
+.ser .sf{padding:5px 8px;background:var(--soft);font-size:11.5px;color:var(--ink2);line-height:1.35}
+.ser .sf b{color:var(--ink)}
+.cupc{display:flex;flex-direction:column;justify-content:center;gap:8px}
+.champ{text-align:center;padding:10px;border-radius:10px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;font-weight:800}
+.hg .poline{grid-column:1/-1;margin:-2px 0 -4px}.potab td.nm{text-align:left}.potab th.nm{text-align:left}.pob{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:7px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;margin-right:6px}
 .lbwrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px;align-items:start}
 .lbc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 12px 8px;min-width:0}
 .lbc.wide{grid-column:1/-1}.lbc h3{margin:0 0 3px;font-size:15px}.lbhead{display:flex;align-items:center;gap:10px}.lbhead h3{margin-right:auto}
@@ -272,7 +300,7 @@ nav.tabs a[data-tab=leaders]{background:#e03131;color:#fff!important}
 <body>
 <div id="app">
 <header>
-  <h1>NHL 2026-27 Regular Season · Win/Loss Lines</h1>
+  <h1 id="ttl">NHL 2026-27 Regular Season · Win/Loss Lines</h1>
   <span class="sub" id="upd">Loading…</span>
   <div class="legend">
     <span class="lg">Win ↗ +1</span><span class="lg">Loss ↘ −1</span><span class="lg">Tie → 0</span>
@@ -285,6 +313,8 @@ nav.tabs a[data-tab=leaders]{background:#e03131;color:#fff!important}
   <a data-tab="compare" href="#compare">Teams Statistics</a>
   <a data-tab="chart" href="#chart">Momentum chart<span class="cnt" id="selcnt"></span></a>
   <a data-tab="leaders" href="#leaders">Leaderboards</a>
+  <a data-tab="bracket" href="#bracket" class="po silver locked"><span class="lk">🔒 </span>Playoff Bracket</a>
+  <a data-tab="poleaders" href="#poleaders" class="po gold locked"><span class="lk">🔒 </span>Playoff Leaders</a>
 </nav>
 <main class="pane" id="paneChart">
   <aside id="teamside">
@@ -315,10 +345,12 @@ nav.tabs a[data-tab=leaders]{background:#e03131;color:#fff!important}
 </main>
 <div class="pane" id="paneStats"><section id="stats" aria-label="Game Statistics"></section></div>
 <div class="pane" id="paneLeaders"><section id="leaders" aria-label="Leaderboards"></section></div>
+<div class="pane" id="paneBracket"><section id="bracket" aria-label="Playoff Bracket"></section></div>
+<div class="pane" id="panePoLeaders"><section id="poleaders" aria-label="Playoff Leaders"></section></div>
 <div class="pane" id="paneCompare"><section id="compare" aria-label="Teams Statistics"></section></div>
 <div class="pane" id="paneHome"><div class="rinkwrap" id="rinkwrap"></div><section id="home" aria-label="Home"></section></div>
 <footer>
-  <span>Data: game results from <a href="https://www.hockey-reference.com/leagues/NHL_2027_games.html">Hockey-Reference</a> (official NHL data), checked against <a href="https://www.nhl.com/standings">NHL standings</a>. Refreshed daily.</span>
+  <span>Data: game results from <a href="https://www.hockey-reference.com/leagues/NHL_2027_games.html">Hockey-Reference</a> (official NHL data), checked against <a href="https://www.nhl.com/standings">NHL standings</a>. Refreshed hourly.</span>
   <span id="cnt"></span>
 </footer>
 </div>
@@ -531,8 +563,9 @@ function updateOddsBtn(){const n=activeTeams().length;
 let SCHED=null,lastPairKey=null;
 const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const fdate=(d,o)=>new Date(d+"T12:00").toLocaleDateString(undefined,o||{weekday:"short",month:"short",day:"numeric"});
-function upcoming(){if(!SCHED||!DATA)return[];const played=new Set(DATA.games.map(g=>g[0]+"|"+g[1]+"|"+g[3]));const t=todayStr();
-  return SCHED.games.filter(g=>g[0]>=t&&!played.has(g[0]+"|"+g[2]+"|"+g[3])).sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:tmin(x[1])-tmin(y[1]))}
+function allSched(){const s=SCHED?SCHED.games.slice():[];if(poActive()&&PO.schedule)for(const g of PO.schedule)if(!seriesOf(g[2],g[3]).winner)s.push(g);return s}
+function upcoming(){if(!SCHED||!DATA)return[];const played=new Set(DATA.games.concat(poGames()).map(g=>g[0]+"|"+g[1]+"|"+g[3]));const t=todayStr();
+  return allSched().filter(g=>g[0]>=t&&!played.has(g[0]+"|"+g[2]+"|"+g[3])).sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:tmin(x[1])-tmin(y[1]))}
 function tmin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||"");if(!m)return 0;let h=+m[1]%12;if(/PM/i.test(m[3]))h+=12;return h*60+ +m[2]}
 function meetings(a,b){return upcoming().filter(g=>(g[2]===a&&g[3]===b)||(g[2]===b&&g[3]===a))}
 const mini=tm=>`<span class="badge" style="background:${T[tm].color};color:${T[tm].badgeText}">${tm}</span>`;
@@ -599,7 +632,7 @@ function evalModel(){const key=otlMode+DATA.games.length;if(_evalCache&&_evalCac
   return _evalCache={key,n,ok,brier:n?brier/n:0,hn,hok}}
 // ===== Main prediction model: team rating (Elo, seeded from last season) + home ice + rest + lineup changes + shot-luck correction =====
 // Settings chosen from published research and checked game by game on this season (see backtest).
-const ELO={K:7,INIT:80,HOME:30,B2B:35,PER_GOAL:108};
+const ELO={K:7,INIT:80,HOME:30,B2B:35,PER_GOAL:108,REVERT:1/3};
 const START_W={lineup:0.5,shots:0.25},MIN_TRACKED=40;
 let PRIOR=null,TSTATS=null,TSHIST=null,HIST=null,_eloCache=null;
 fetch("prior.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{PRIOR=d;_eloCache=null;renderStats()}).catch(()=>{});
@@ -609,18 +642,26 @@ fetch("lineup_history.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{HIST=
 const dayNum=s=>Math.round(new Date(s+"T12:00:00Z").getTime()/864e5);
 const priorGD=t=>{const p=PRIOR&&PRIOR.teams[t];return p?(p.gf-p.ga)/p.gp:0};
 const eloP=dr=>1/(1+Math.pow(10,-dr/400));
-function eloRun(){const key=(DATA?DATA.games.length:0)+"|"+(PRIOR?1:0);if(_eloCache&&_eloCache.key===key)return _eloCache;
+function eloRun(){const pog=poGames();const key=(DATA?DATA.games.length:0)+"|"+(PRIOR?1:0)+"|"+pog.length+"|"+Object.keys(ARCH).length;if(_eloCache&&_eloCache.key===key)return _eloCache;
   const R={},last={},gp={},preds=[];const g=t=>(t in R)?R[t]:(R[t]=(PRIOR&&PRIOR.teams[t]&&PRIOR.teams[t].elo!=null)?PRIOR.teams[t].elo:1500+ELO.INIT*priorGD(t));
+  // finished seasons (oldest first): play every game, then pull each rating a third of the way back to 1500 for the summer
+  for(const s of (SEASON.archives||[])){const A=ARCH[s];if(!A)continue;const lst={};
+    for(const[d,a,ag,h,hg] of [...(A.games||[]),...(A.playoffGames||[])]){const dn=dayNum(d);const ra=a in lst?dn-lst[a]-1:9,rh=h in lst?dn-lst[h]-1:9;
+      const p=eloP(g(h)-g(a)+ELO.HOME+ELO.B2B*((ra===0)-(rh===0))),y=hg>ag?1:0,ch=ELO.K*Math.log(Math.abs(hg-ag)+1)*(y-p);R[h]+=ch;R[a]-=ch;lst[a]=lst[h]=dn}
+    for(const t in T){g(t);R[t]=1500+(R[t]-1500)*(1-ELO.REVERT)}}
   for(const[d,a,ag,h,hg,note] of DATA.games){const dn=dayNum(d);const ra=a in last?dn-last[a]-1:9,rh=h in last?dn-last[h]-1:9;
     const dr=g(h)-g(a)+ELO.HOME+ELO.B2B*((ra===0)-(rh===0)),p=eloP(dr),y=hg>ag?1:0;
     preds.push({d,a,h,p,y,dr,ra,rh,elig:(gp[a]||0)>=3&&(gp[h]||0)>=3});
     const ch=ELO.K*Math.log(Math.abs(hg-ag)+1)*(y-p);R[h]+=ch;R[a]-=ch;last[a]=last[h]=dn;gp[a]=(gp[a]||0)+1;gp[h]=(gp[h]||0)+1}
+  // playoff games keep moving the ratings (they are not part of the regular-season accuracy test)
+  for(const[d,a,ag,h,hg] of pog){const dn=dayNum(d);const ra=a in last?dn-last[a]-1:9,rh=h in last?dn-last[h]-1:9;
+    const p=eloP(g(h)-g(a)+ELO.HOME+ELO.B2B*((ra===0)-(rh===0))),y=hg>ag?1:0,ch=ELO.K*Math.log(Math.abs(hg-ag)+1)*(y-p);R[h]+=ch;R[a]-=ch;last[a]=last[h]=dn}
   for(const t in T)g(t);
   const ev=preds.filter(x=>x.elig);const scored=ev.slice(40);let ok=0,br=0,hok=0;scored.forEach(x=>{if((x.p>.5)===(x.y===1))ok++;br+=(x.p-x.y)**2;if(x.y)hok++});
   return _eloCache={key,R,last,preds,eval:{n:scored.length,ok,brier:scored.length?br/scored.length:0,hok}}}
 function restDays(tm,date){const E=eloRun();const dn=dayNum(date);let prev=tm in E.last?E.last[tm]:null;
   // for future games, the team's previous game may be a scheduled one that hasn't been played yet
-  if(SCHED)for(const g of SCHED.games){if((g[2]===tm||g[3]===tm)&&g[0]<date){const d=dayNum(g[0]);if(prev==null||d>prev)prev=d}}
+  for(const g of allSched()){if((g[2]===tm||g[3]===tm)&&g[0]<date){const d=dayNum(g[0]);if(prev==null||d>prev)prev=d}}
   return prev==null?9:dn-prev-1}
 // "Typical" lineup = the 12 forwards and 6 defencemen with the most games, plus the goalie with the most games (same rule as Auto-fill)
 function typicalLineup(tm){const sk=STATS.skaters[tm]||[];const by=arr=>[...arr].sort((a,b)=>b[2]-a[2]||b[3]-a[3]);
@@ -781,8 +822,9 @@ function renderHome(){const el=document.getElementById("home");
   const f=v=>Math.round(v*100)+"%";
   const body=show.map(d=>`<div class="hday"><div class="hdh">${fdate(d,{weekday:"long",month:"long",day:"numeric"})}<span>${up.filter(g=>g[0]===d).length} games</span></div>`+
     up.filter(g=>g[0]===d).map(g=>{const a=g[2],h=g[3],P=quickOdds(a,h,d),pc=pairCols(a,h),on=cp&&cp[0]===a&&cp[1]===h;
+      const pl=poLabel(a,h,d);
       return`<button class="hg${on?" on":""}" data-pick="${a},${h}" style="--ca:${pc.a.line};--ch:${pc.b.line}">
-        <span class="ht">${g[1]}</span>
+        ${pl?`<span class="poline"><span class="pob">🏆 ${pl}</span></span>`:""}<span class="ht">${g[1]}</span>
         <span class="hteam">${mini(a)}<span class="hn">${T[a].name}</span></span><span class="hat">at</span><span class="hteam">${mini(h)}<span class="hn">${T[h].name}</span></span>
         <span class="hodds"><span class="hob"><i style="width:${(1-P)*100}%;background:${pc.a.line}"></i><b></b><i style="width:${P*100}%;background:${pc.b.line}"></i></span><small>${a} ${f(1-P)} · ${h} ${f(P)}</small></span>
         <span class="hgo">Choose this game →</span></button>`}).join("")+`</div>`).join("");
@@ -790,14 +832,14 @@ function renderHome(){const el=document.getElementById("home");
     <div class="hstrip">${strip}</div>
     <h2>Upcoming games</h2>
     <p class="hsub">Pick a game to get its full prediction in <b>Game Statistics</b> and the side-by-side comparison in <b>Teams Statistics</b>. Times are Eastern. Quick odds use team rating, home ice and rest; the full prediction adds lineups, goalies and shooting/save-% luck.${cp?` Currently comparing ${mini(cp[0])} at ${mini(cp[1])}.`:""}</p>
-    ${body||`<p class="hsub">No more regular-season games scheduled.</p>`}
+    ${body||`<p class="hsub">${noGamesMsg()}</p>`}
     ${days.length>homeDays?`<div class="hmore"><button class="abtn" id="hmore">Show more days (${days.length-homeDays} left)</button></div>`:""}
     <details class="guide"><summary>How to use this</summary><ol>
       <li><b>Pick a game here.</b> This is the only place to choose the two teams to compare.</li>
       <li><b>Game Statistics</b> shows the prediction: each team's win chance, regulation vs overtime/shootout, and what pushes the odds. Switch to <i>Your weights</i> to try your own weighting.</li>
       <li><b>Teams Statistics</b> puts the two teams side by side: form, goalies and game-day lineups. Projected lineups and starting goalies load automatically; use ⇄ to swap one player for a late scratch and the odds update.</li>
       <li><b>Momentum chart</b> works on its own: tick teams in its list to draw their season lines (up a step for a win, down for a loss) and add trendlines, levels or Fibonacci retracements.</li></ol>
-      <p class="hnote">Scores, standings and stats refresh every morning; lineups and goalies around noon and 5 pm Eastern. Treat the odds as rough guides — even the best public models pick about 60–64% of single games.</p></details>
+      <p class="hnote">Scores and stats refresh every hour as games finish (with a full refresh at midnight and 6 pm Eastern); lineups and starting goalies at 12:15 am and 6:15 pm Eastern. Playoff games appear here too once the playoffs begin. Treat the odds as rough guides — even the best public models pick about 60–64% of single games.</p></details>
   </div></div>`;
   bindPicks(el);const m=el.querySelector("#hmore");if(m)m.onclick=()=>{homeDays+=7;const y=el.scrollTop;renderHome();el.scrollTop=y}}
 
@@ -836,13 +878,139 @@ function renderLeaders(){const el=document.getElementById("leaders");if(curTab!=
       gk.slice(0,lbN).map((r,i)=>`<tr><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${r.sv.toFixed(3).replace(/^0/,"")}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
   </div>`;
   el.querySelectorAll("[data-lbv]").forEach(b=>b.onclick=()=>{lbView=b.dataset.lbv;store.set("lbView",lbView);renderLeaders()})}
+// ===== Seasons & playoffs =====
+// season.json says which season is current and lists finished seasons (archive/<season>.json) whose games feed the team ratings.
+// playoffs.json holds the current season's playoff seeds, games, schedule and playoff-only player stats.
+let SEASON={season:"2026-27",phase:"regular",gamesPerTeam:84,archives:[]},PO=null;const ARCH={};
+function poActive(){return !!(PO&&PO.season===SEASON.season)}
+function poGames(){return poActive()&&PO.games?PO.games:[]}
+function poUnlocked(){return poActive()&&!!PO.seeds}
+function updateTitle(){const ph=SEASON.phase==="playoffs"?"Playoffs":SEASON.phase==="offseason"?"Season":"Regular Season";
+  const h=document.getElementById("ttl");if(h)h.textContent=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`;document.title=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`}
+function updatePoTabs(){document.querySelectorAll("nav.tabs a.po").forEach(a=>{a.classList.toggle("locked",!poUnlocked());a.title=poUnlocked()?"":"Unlocks once all 16 playoff teams are known"})}
+function refreshAll(){_eloCache=null;_brCache=null;updateTitle();updatePoTabs();if(!DATA)return;renderStats();if(curTab==="home")renderHome();renderLeaders();renderBracket();renderPoLeaders()}
+fetch("season.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SEASON=Object.assign({archives:[]},d);
+  return Promise.all(SEASON.archives.map(s=>fetch("archive/"+s+".json",{cache:"no-store"}).then(r=>r.json()).then(a=>{ARCH[s]=a}).catch(()=>{})))}).then(refreshAll).catch(()=>{});
+fetch("playoffs.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{PO=d;refreshAll()}).catch(()=>{});
+
+const CONFS={W:["Central","Pacific"],E:["Atlantic","Metropolitan"]};
+const RNAME=["","Round 1","Round 2","Conference Final","Stanley Cup Final"];
+function seriesOf(x,y){const w={[x]:0,[y]:0},gs=[];for(const g of poGames()){if((g[1]===x&&g[3]===y)||(g[1]===y&&g[3]===x)){gs.push(g);w[g[4]>g[2]?g[3]:g[1]]++}}
+  return{w,gs,winner:w[x]>=4?x:w[y]>=4?y:null}}
+let _rkCache=null;
+function regRank(){const k=DATA?DATA.games.length:0;if(_rkCache&&_rkCache.k===k)return _rkCache.r;const r={};standings().sort(stSort).forEach((x,i)=>r[x.tm]=i);_rkCache={k,r};return r}
+// chance the higher seed (home in games 1, 2, 5 and 7) wins a best-of-seven from the current series score
+const HOMEPAT=[1,1,0,0,1,0,1];
+function seriesP(hi,lo,wh,wl){const E=eloRun(),ph=eloP(E.R[hi]-E.R[lo]+ELO.HOME),pa=1-eloP(E.R[lo]-E.R[hi]+ELO.HOME),m={};
+  const f=(a,b)=>{if(a>=4)return 1;if(b>=4)return 0;const k=a*8+b;if(k in m)return m[k];const p=HOMEPAT[a+b]?ph:pa;return m[k]=p*f(a+1,b)+(1-p)*f(a,b+1)};return f(wh,wl)}
+// "If the playoffs started today": top 3 in each division + 2 wild cards per conference; the better division winner meets the 2nd wild card
+function projectedSeeds(){const st=standings().sort(stSort),out={labels:{},projected:true};
+  for(const c of["W","E"]){const[d1,d2]=CONFS[c];const top=d=>st.filter(r=>r.div===d).slice(0,3).map(r=>r.tm);const A=top(d1),B=top(d2);
+    const wc=st.filter(r=>CONFS[c].includes(r.div)&&!A.includes(r.tm)&&!B.includes(r.tm)).slice(0,2).map(r=>r.tm);
+    const aBetter=st.findIndex(r=>r.tm===A[0])<st.findIndex(r=>r.tm===B[0]);
+    out[c]=[[A[0],aBetter?wc[1]:wc[0]],[A[1],A[2]],[B[0],aBetter?wc[0]:wc[1]],[B[1],B[2]]];
+    A.forEach((t,i)=>out.labels[t]=d1[0]+(i+1));B.forEach((t,i)=>out.labels[t]=d2[0]+(i+1));out.labels[wc[0]]="WC1";out.labels[wc[1]]="WC2"}
+  return out}
+const known=D=>{const k=Object.keys(D).filter(t=>D[t]>0);return k.length===1?k[0]:null};
+let _brCache=null;
+function bracketModel(seeds){const key=eloRun().key+"|"+(seeds.projected?"p":"o");if(_brCache&&_brCache.key===key)return _brCache.m;
+  const rk=regRank(),order=(a,b,r)=>r===1||rk[a]<=rk[b]?[a,b]:[b,a];
+  const mk=(A,B,round)=>{const s={A,B,round},ka=known(A),kb=known(B);
+    if(ka&&kb){const[hi,lo]=order(ka,kb,round);Object.assign(s,{hi,lo},seriesOf(hi,lo))}
+    const out={};for(const a in A)for(const b in B){const pab=A[a]*B[b];if(!(pab>0))continue;const[hi,lo]=order(a,b,round),S=seriesOf(hi,lo);
+      const ph=S.winner?(S.winner===hi?1:0):seriesP(hi,lo,S.w[hi],S.w[lo]);if(ph>0)out[hi]=(out[hi]||0)+pab*ph;if(ph<1)out[lo]=(out[lo]||0)+pab*(1-ph)}
+    s.out=out;return s};
+  const m={};for(const c of["W","E"]){const r1=seeds[c].map(p=>mk({[p[0]]:1},{[p[1]]:1},1));const r2=[mk(r1[0].out,r1[1].out,2),mk(r1[2].out,r1[3].out,2)];m[c]={r1,r2,cf:mk(r2[0].out,r2[1].out,3)}}
+  m.F=mk(m.W.cf.out,m.E.cf.out,4);_brCache={key,m};return m}
+function nextPoGame(a,b){if(!poActive()||!PO.schedule)return null;const t=todayStr(),n=seriesOf(a,b).gs.length;
+  const g=PO.schedule.filter(x=>((x[2]===a&&x[3]===b)||(x[2]===b&&x[3]===a))&&x[0]>=t).sort((x,y)=>x[0]<y[0]?-1:1)[0];return g?{g,n:n+1}:null}
+function serState(s){const[a,b]=[s.hi,s.lo],wa=s.w[a],wb=s.w[b];
+  if(s.winner){const l=s.winner===a?b:a;return`<b>${s.winner} wins ${s.w[s.winner]}–${s.w[l]}</b>`}
+  if(!s.gs.length)return"Series not started";if(wa===wb)return`Series tied ${wa}–${wb}`;const ld=wa>wb?a:b;return`<b>${ld} leads ${Math.max(wa,wb)}–${Math.min(wa,wb)}</b>`}
+function serCard(s,labels){const pc=v=>Math.round(v*100)+"%";
+  const row=D=>{const k=known(D);if(!k){const c=Object.entries(D).sort((x,y)=>y[1]-x[1]).slice(0,2);
+      return`<div class="sr"><span class="sd"></span><span class="nm tbd" title="${c.map(([t,p])=>`${t} ${pc(p)}`).join(", ")}">${c.length?"TBD: "+c.map(([t])=>t).join(" or "):"TBD"}</span><span class="wn"></span></div>`}
+    const cl=s.winner?(s.winner===k?" win":" out"):"";
+    return`<div class="sr${cl}" style="border-left-color:${T[k].color}"><span class="sd">${labels[k]||""}</span><span class="nm">${mini(k)} ${esc(T[k].name.split(" ").slice(-1)[0])}</span><span class="wn">${s.hi&&s.gs.length?s.w[k]:""}</span></div>`};
+  let foot="";if(s.hi){foot=serState(s);if(!s.winner){const p=seriesP(s.hi,s.lo,s.w[s.hi],s.w[s.lo]);const nx=nextPoGame(s.hi,s.lo);
+      foot+=`<br>Our odds: ${s.hi} <b>${pc(p)}</b> · ${s.lo} <b>${pc(1-p)}</b>`+(nx?`<br>Game ${nx.n}: ${fdate(nx.g[0],{month:"short",day:"numeric"})}, ${nx.g[1]} at ${nx.g[3]}`:"")}}
+  else foot="Waiting on earlier rounds";
+  return`<div class="ser">${row(s.A)}${row(s.B)}<div class="sf">${foot}</div></div>`}
+function bracketHTML(seeds){const M=bracketModel(seeds),L=seeds.labels||{};const col=(h,arr)=>`<div class="col"><div class="colh">${h}</div><div class="colb">${arr.map(s=>serCard(s,L)).join("")}</div></div>`;
+  const champ=M.F.winner?`<div class="champ">🏆 ${seeds.projected?"":esc(SEASON.season)+" "}Stanley Cup Champions<br>${mini(M.F.winner)} ${esc(T[M.F.winner].name)}</div>`:"";
+  return`<div class="brk">${col("West · Round 1",M.W.r1)}${col("West · Round 2",M.W.r2)}${col("West Final",[M.W.cf])}
+    <div class="col"><div class="colh">Stanley Cup Final</div><div class="colb cupc">${serCard(M.F,L)}${champ}</div></div>
+    ${col("East Final",[M.E.cf])}${col("East · Round 2",M.E.r2)}${col("East · Round 1",M.E.r1)}</div>`}
+function cupOddsHTML(seeds,title,sub){const M=bracketModel(seeds),reach={},add=(o,k)=>{for(const t in o){reach[t]=reach[t]||{};reach[t][k]=(reach[t][k]||0)+o[t]}};
+  for(const c of["W","E"]){M[c].r1.forEach(s=>add(s.out,"r2"));M[c].r2.forEach(s=>add(s.out,"cf"));add(M[c].cf.out,"f")}add(M.F.out,"cup");
+  const teams=[...seeds.W.flat(),...seeds.E.flat()];teams.forEach(t=>reach[t]=reach[t]||{});
+  const pc=v=>v==null||v<0.0005?"–":v>0.9995?"✓":(v*100).toFixed(v<0.1?1:0)+"%";
+  const rows=teams.sort((a,b)=>(reach[b].cup||0)-(reach[a].cup||0)||(reach[b].f||0)-(reach[a].f||0)||(reach[b].cf||0)-(reach[a].cf||0)||(reach[b].r2||0)-(reach[a].r2||0)).map(t=>{const r=reach[t];
+    return`<tr><td class="nm">${mini(t)} ${esc(T[t].name)}</td><td>${esc((seeds.labels||{})[t]||"")}</td><td>${pc(r.r2)}</td><td>${pc(r.cf)}</td><td>${pc(r.f)}</td><td><b>${pc(r.cup)}</b></td></tr>`}).join("");
+  return`<div class="pocard"><h3>${title}</h3><p>${sub}</p><table class="lbt potab"><tr><th class="nm">Team</th><th>Seed</th><th>Round 2</th><th>Conf. Final</th><th>Cup Final</th><th>Win Cup</th></tr>${rows}</table></div>`}
+// clinched = can't finish outside the top 3 of its division or the top 5 of its conference, whatever happens in the remaining games
+function clinchedSet(){const set=new Set(poActive()&&PO.clinched?PO.clinched:[]);if(!DATA)return set;const st=standings(),G=SEASON.gamesPerTeam||82;
+  const mx=r=>r.pts+2*Math.max(0,G-r.gp);const conf=r=>CONFS.W.includes(r.div)?"W":"E";
+  if(st.every(r=>r.gp>=G)){const s=projectedSeeds();[...s.W.flat(),...s.E.flat()].forEach(t=>set.add(t));return set}
+  for(const r of st){const o=st.filter(x=>x!==r&&conf(x)===conf(r)&&mx(x)>=r.pts);if(o.filter(x=>x.div===r.div).length<=2||o.length<=4)set.add(r.tm)}
+  return set}
+function lastRegDate(){const d=SCHED&&SCHED.games.length?SCHED.games.reduce((m,g)=>g[0]>m?g[0]:m,""):"";return d||SEASON.regEnd||""}
+function lockHTML(what){const cl=clinchedSet(),st=standings().sort(stSort),end=lastRegDate();
+  const conf=c=>{const tms=st.filter(r=>CONFS[c].includes(r.div)).map(r=>r.tm).filter(t=>cl.has(t));
+    return`<div><h4>${c==="W"?"Western":"Eastern"} Conference · ${tms.length} of 8 clinched</h4><div class="clbar"><i style="width:${tms.length/8*100}%"></i></div><div class="cllist">${tms.map(mini).join("")||`<span style="color:var(--muted);font-size:12.5px">No team has clinched yet</span>`}</div></div>`};
+  return`<div class="pocard"><div class="lockhd"><span class="big">🔒</span><div><h2>${esc(SEASON.season)} Playoffs — ${what} locked</h2>
+    <p>This tab unlocks automatically once all 16 playoff teams are known${end?` (the regular season ends ${fdate(end,{month:"long",day:"numeric"})})`:""}. The bracket then fills in by itself as each series is decided.</p></div></div>
+    <div class="cltr">${conf("W")}${conf("E")}</div>
+    <p style="font-size:11.5px;color:var(--muted)">A team counts as clinched here once it can no longer drop out of the top 3 in its division or the top 5 in its conference, so this tracker can run a little behind the NHL's official clinch marks.</p></div>`}
+function renderBracket(){const el=document.getElementById("bracket");if(curTab!=="bracket")return;
+  if(!DATA){el.innerHTML=`<div class="nomsg" style="margin-top:80px">Loading…</div>`;return}
+  if(!poUnlocked()){const s=projectedSeeds();el.innerHTML=`<div class="pow">${lockHTML("bracket")}
+      <div class="pocard"><h3>If the playoffs started today</h3><p>Seeded from the current standings (top 3 in each division plus two wild cards per conference). "Our odds" use today's team ratings with home ice to the higher seed in games 1, 2, 5 and 7.</p><div class="brkwrap proj">${bracketHTML(s)}</div></div>
+      ${cupOddsHTML(s,"Stanley Cup odds if the playoffs started today","Each team's chance to reach each round, worked out from our game-by-game odds across every possible path through this bracket.")}</div>`;return}
+  const S=PO.seeds;el.innerHTML=`<div class="pow"><div class="pocard"><h2>${esc(SEASON.season)} Stanley Cup Playoffs</h2>
+      <p>Each series is best of seven; the higher seed has home ice in games 1, 2, 5 and 7 (from round 2 on, the team with the better regular-season record). Winners move on automatically once a series is decided. "Our odds" are each team's chance to win the series from the current score.</p>
+      <div class="brkwrap">${bracketHTML(S)}</div></div>
+    ${cupOddsHTML(S,"Stanley Cup odds","Each team's chance to reach each round, from the current series scores and our game-by-game odds. ✓ = already there.")}</div>`}
+function renderPoLeaders(){const el=document.getElementById("poleaders");if(curTab!=="poleaders")return;
+  if(!DATA){el.innerHTML=`<div class="nomsg" style="margin-top:80px">Loading…</div>`;return}
+  if(!poUnlocked()){el.innerHTML=`<div class="pow">${lockHTML("leaders")}<div class="pocard"><h3>What you'll see here</h3><p>Playoff-only leaderboards — top goal scorers, top players by points, and goaltenders ranked by our rating — kept separate from regular-season totals and updated after every playoff game.</p></div></div>`;return}
+  const sk=[],gk=[];for(const tm in(PO.skaters||{}))for(const x of PO.skaters[tm])sk.push({n:x[0],tm,pos:x[1],gp:x[2],pts:x[3],pm:x[4],g:x[5],a:x[6]});
+  for(const tm in(PO.goalies||{}))for(const g of PO.goalies[tm])gk.push({n:g[0],tm,gp:g[1],sv:g[2]});
+  if(!sk.length&&!gk.length){el.innerHTML=`<div class="pow"><div class="pocard"><h2>${esc(SEASON.season)} Playoff Leaders</h2><p>Playoff stats appear here after the first playoff games are played.</p></div></div>`;return}
+  let gs=0,gw=0;gk.forEach(g=>{gs+=g.gp*g.sv;gw+=g.gp});const lsv=gw?gs/gw:(STATS?league().sv:0.9);
+  gk.forEach(g=>{const sh=g.gp*SHOTS_PG,sv=(g.sv*sh+lsv*GOALIE_PRIOR_SHOTS)/(sh+GOALIE_PRIOR_SHOTS);g.r=(sv-lsv)*SHOTS_PG});gk.sort((a,b)=>b.r-a.r);
+  const goals=sk.filter(r=>r.g!=null).sort((a,b)=>b.g-a.g||a.gp-b.gp||b.pts-a.pts).slice(0,lbN);
+  const points=sk.slice().sort((a,b)=>b.pts-a.pts||(b.g||0)-(a.g||0)||a.gp-b.gp).slice(0,lbN);
+  const rank=(arr,i,key)=>i>0&&arr[i-1][key]===arr[i][key]?"":i+1,pl=r=>`<td class="nm">${esc(r.n)}</td><td>${mini(r.tm)}</td>`;
+  const out=new Set();if(PO.seeds){const M=bracketModel(PO.seeds);const all=[...M.W.r1,...M.W.r2,M.W.cf,...M.E.r1,...M.E.r2,M.E.cf,M.F];all.forEach(s=>{if(s.winner)out.add(s.winner===s.hi?s.lo:s.hi)})}
+  const tmc=tm=>out.has(tm)?' style="opacity:.55" title="Team eliminated"':"";
+  const card=(title,sub,head,body)=>`<div class="lbc"><h3>${title}</h3><div class="lbs">${sub}</div><table class="lbt"><tr>${head}</tr>${body}</table></div>`;
+  const asOf=PO.statsUpdated?` · as of ${fdate(PO.statsUpdated,{month:"short",day:"numeric"})}`:"";
+  el.innerHTML=`<div class="pow" style="padding-bottom:0"><div class="pocard"><h2>${esc(SEASON.season)} Playoff Leaders</h2><p>Playoff games only. Faded rows are players whose team has been eliminated.</p></div></div><div class="lbwrap">
+    ${card("Top goal scorers",`Playoff goals${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>G/GP</th>`,
+      goals.map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${rank(goals,i,"g")}</td>${pl(r)}<td>${r.gp}</td><td><b>${r.g}</b></td><td>${r.gp?(r.g/r.gp).toFixed(2):"–"}</td></tr>`).join(""))}
+    ${card("Top players by points",`Playoff goals + assists${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
+      points.map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${rank(points,i,"pts")}</td>${pl(r)}<td>${r.gp}</td><td>${r.g??"–"}</td><td>${r.a??(r.g!=null?r.pts-r.g:"–")}</td><td><b>${r.pts}</b></td><td>${sgn(r.pm)}</td></tr>`).join(""))}
+    ${card("Top goaltenders — our rating",`Playoff goals saved per game compared with an average playoff goalie (playoff save % ${lsv.toFixed(3).replace(/^0/,"")}). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Playoffs</th>`,
+      gk.slice(0,lbN).map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${r.sv.toFixed(3).replace(/^0/,"")}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
+  </div>`}
+// label for a playoff game in Upcoming games, e.g. "Round 1 · Game 3 · FLA leads 2–1"
+function poLabel(a,h,d){if(!poUnlocked()||!PO.schedule||!PO.schedule.some(g=>g[0]===d&&g[2]===a&&g[3]===h))return"";
+  const M=bracketModel(PO.seeds),all=[...M.W.r1,...M.W.r2,M.W.cf,...M.E.r1,...M.E.r2,M.E.cf,M.F];const s=all.find(x=>x.hi&&((x.hi===a&&x.lo===h)||(x.hi===h&&x.lo===a)));
+  const S=seriesOf(a,h),n=S.gs.filter(g=>g[0]<d).length+1,wa=S.w[a],wh=S.w[h];
+  const st=!S.gs.length?"":wa===wh?` · tied ${wa}–${wh}`:` · ${wa>wh?a:h} leads ${Math.max(wa,wh)}–${Math.min(wa,wh)}`;
+  return`${s?RNAME[s.round]:"Playoffs"} · Game ${n}${st}`}
+function noGamesMsg(){if(SEASON.phase==="offseason"||(poUnlocked()&&bracketModel(PO.seeds).F.winner))return`The ${esc(SEASON.season)} season is complete. Next season's games appear here as soon as the NHL releases its schedule.`;
+  if(poUnlocked())return"No playoff games are scheduled right now — the next round's games appear here as soon as the matchups are set.";
+  return"No more regular-season games scheduled."}
+
 // ----- tabs -----
 let curTab="home";
-const PANES={home:"paneHome",chart:"paneChart",stats:"paneStats",compare:"paneCompare",leaders:"paneLeaders"};
+const PANES={home:"paneHome",chart:"paneChart",stats:"paneStats",compare:"paneCompare",leaders:"paneLeaders",bracket:"paneBracket",poleaders:"panePoLeaders"};
 function showTab(t){if(!PANES[t])t="home";if((t==="stats"||t==="compare")&&!gamePicked)t="home";curTab=t;
   for(const k in PANES)document.getElementById(PANES[k]).classList.toggle("on",k===t);
   document.querySelectorAll("nav.tabs a").forEach(a=>a.classList.toggle("on",a.dataset.tab===t));
-  if(t==="chart")requestAnimationFrame(resize);if(t==="stats"||t==="compare")renderStats();if(t==="leaders")renderLeaders();if(t==="home")renderHome()}
+  if(t==="chart")requestAnimationFrame(resize);if(t==="stats"||t==="compare")renderStats();if(t==="leaders")renderLeaders();if(t==="home")renderHome();if(t==="bracket")renderBracket();if(t==="poleaders")renderPoLeaders()}
 window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h==="teams"){location.replace("#chart");return}showTab(h)});
 if(location.hash&&location.hash!=="#home")history.replaceState(null,"",location.pathname+location.search+"#home");showTab("home");
 function momentum(tm){let m=0,last=null;for(const g of SERIES[tm]){const d=g.c-g.o;
