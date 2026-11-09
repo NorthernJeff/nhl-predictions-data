@@ -1,6 +1,6 @@
 /**
- * NHL Win/Loss Lines — hockey pool service (Cloudflare Pages Function at /api).
- * Storage: a Cloudflare D1 database bound to this Pages project as "DB".
+ * NHL Win/Loss Lines — hockey pool service (Cloudflare Worker route /api).
+ * Storage: a Cloudflare D1 database bound to this Worker as "DB" (see wrangler.jsonc).
  * Every rule that matters is enforced here: entry deadline, unique names per pool,
  * exact pick counts, valid playoff players/teams, and no edits after entering.
  */

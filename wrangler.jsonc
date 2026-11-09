@@ -1,0 +1,15 @@
+{
+  // Cloudflare Worker for the NHL Win/Loss Lines site.
+  "name": "nhl-predictions-data",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api", "/api/*"]
+  },
+  // Hockey-pool database. Created automatically on first deploy.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "nhl-pools" }
+  ]
+}
