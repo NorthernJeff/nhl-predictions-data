@@ -374,7 +374,10 @@ function hex2rgb(h){h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.substr(i
 function lum(h){const[r,g,b]=hex2rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b}
 function fitLine(h){let[r,g,b]=hex2rgb(h);let i=0;const hx=()=>"#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");while(lum(hx())>.28&&i<20){r=Math.round(r*.85);g=Math.round(g*.85);b=Math.round(b*.85);i++}return hx()}
 function liftColor(h){let[r,g,b]=hex2rgb(h);let i=0;while(lum("#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join(""))<.16&&i<20){r=Math.round(r+(255-r)*.15);g=Math.round(g+(255-g)*.15);b=Math.round(b+(255-b)*.15);i++}return`rgb(${r},${g},${b})`}
-const store={get(k,d){try{const v=localStorage.getItem("nhlwl:"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("nhlwl:"+k,JSON.stringify(v))}catch(e){}}};
+// Visitor choices last only while the page is open (sessionStorage is cleared when the tab or browser closes), so every visit starts fresh.
+// Older versions saved choices permanently in localStorage; remove those leftovers.
+try{for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k.startsWith("nhlwl:"))localStorage.removeItem(k)}}catch(e){}
+const store={get(k,d){try{const v=sessionStorage.getItem("nhlwl:"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{sessionStorage.setItem("nhlwl:"+k,JSON.stringify(v))}catch(e){}}};
 // ----- light / dark mode -----
 let darkMode=store.get("darkMode2",true);
 function applyMode(){document.body.classList.toggle("dark",darkMode);const b=document.getElementById("modebtn");if(b)b.textContent=darkMode?"☀ Light":"☾ Dark"}
