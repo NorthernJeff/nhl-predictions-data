@@ -199,7 +199,7 @@ export function page({ title, desc, path, ld, body }) {
 <link rel="canonical" href="${SITE}${path}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#11151b">
+<meta name="theme-color" content="#f7f8fa">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${BRAND}">
 <meta property="og:title" content="${esc(title)}">
@@ -212,7 +212,7 @@ export function page({ title, desc, path, ld, body }) {
 <meta name="twitter:image" content="${SITE}/og-image.png">
 ${(ld || []).map(o => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`).join('\n')}
 <style>
-:root{--bg:#11151b;--card:#1a2029;--soft:#232a35;--line:#2e3642;--ink:#e8ecf2;--ink2:#b5bdc9;--muted:#7f8a99;--acc:#6f9bff;--ok:#51cf66;--bad:#ff6b6b;--gold:#e9bd3f;color-scheme:dark}
+:root{--bg:#f7f8fa;--card:#ffffff;--soft:#eef1f5;--line:#e3e6eb;--ink:#1c2230;--ink2:#4b5466;--muted:#7a8496;--acc:#2f6fed;--ok:#2b8a3e;--bad:#d7191f;--gold:#e9bd3f;color-scheme:light}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 a{color:var(--acc)}.top{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:8px}
 .brand{font-weight:800;font-size:19px;color:var(--ink);text-decoration:none}.top nav a{margin-left:16px;color:var(--ink2);text-decoration:none;font-size:14px}.top nav a:hover{color:var(--ink)}

@@ -142,7 +142,7 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;margin-top:22px}
 <footer>NHL Win/Loss Lines · independent and unofficial · <a href="index.html">Back to the app</a></footer>
 </main>
 <script>
-const KEY="nhlwl:darkMode2";let dark=true;try{const v=sessionStorage.getItem(KEY);if(v!=null)dark=JSON.parse(v)}catch(e){}
+const KEY="nhlwl:darkMode2";let dark=false;try{const v=sessionStorage.getItem(KEY);if(v!=null)dark=JSON.parse(v)}catch(e){}
 const btn=document.getElementById("modebtn");
 function apply(){document.body.classList.toggle("dark",dark);btn.textContent=dark?"☀ Light":"☾ Dark"}
 btn.onclick=()=>{dark=!dark;try{sessionStorage.setItem(KEY,JSON.stringify(dark))}catch(e){}apply()};apply();
