@@ -52,6 +52,7 @@ p{color:var(--ink2);margin:6px 0}
 .secth{font-size:17px;margin:12px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}.sect h3:not(.secth){margin-top:14px}
 .namebox input{font:inherit;font-size:17px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(360px,100%)}
 .flab{font-weight:700;font-size:14px;margin-bottom:-4px}.flab span{font-weight:400;color:var(--muted)}
+.frules{margin:6px 0 8px;padding-left:22px}.frules li{margin:3px 0}
 .adminnote{background:#fff4c2;color:#3a2a00;border:1px solid #e9bd3f;border-radius:8px;padding:8px 12px;margin:4px 0 10px;font-size:14.5px}.adminnote b{color:#3a2a00}
 .ekey{margin-top:16px;background:var(--soft);border:1px dashed #e9bd3f;border-radius:10px;padding:10px 14px}.ekey h3{margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ek{font-size:22px;letter-spacing:.12em;font-variant-numeric:tabular-nums}.ekok{display:flex;align-items:center;gap:8px;font-weight:700;margin-top:6px;cursor:pointer}
 .warn{display:inline-block;margin-left:10px;color:var(--bad);font-weight:700;font-size:13.5px}
@@ -101,8 +102,9 @@ const tname=t=>(TEAMS[t]||[t])[0];
 const NEED={C:2,LW:2,RW:2,D:4,G:2,T:5};
 const GNAME={C:"Centres",LW:"Left Wings",RW:"Right Wings",D:"Defence",G:"Goaltenders",T:"Teams",S:"Skaters (top 25)"};
 const NEED_M={S:10,G:2,T:5};
-const formulaM=(n,mn)=>`<div class="formula"><b>Score</b> = (total points of your 10 skaters) + (total saves of your 2 goaltenders ÷ 20) + (total wins of your 5 teams). Only <b>each team's first ${n} games of ${esc(mn)}</b> count, so every player and team gets the same number of games. Highest score wins.</div>`;
-const FORMULA=`<div class="formula"><b>Score</b> = (total points of your 10 forwards and defence) + (total saves of your 2 goaltenders ÷ 20) + (total playoff wins of your 5 teams). Highest score wins.</div>`;
+const fRules=(sk,po)=>`<b>How scoring works</b><ol class="frules"><li><b>1 point</b> for every point (goal or assist) scored by your ${sk} skaters.</li><li><b>1 point</b> for every ${po?"playoff ":""}win by your 5 teams.</li><li><b>1 point</b> for every 20 saves by your 2 goaltenders. Each save counts, so 30 saves = 1.5 points.</li></ol>`;
+const formulaM=(n,mn)=>`<div class="formula">${fRules(10,false)}Only <b>each team's first ${n} games of ${esc(mn)}</b> count, so every player and team gets the same number of games. Highest total wins.</div>`;
+const FORMULA=`<div class="formula">${fRules(10,true)}Highest total wins.</div>`;
 const fmtD=ms=>new Date(ms).toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
 function posGroups(pos){const g=new Set();String(pos||"").toUpperCase().split(/[^A-Z]+/).forEach(p=>{if(p==="C")g.add("C");else if(p==="LW")g.add("LW");else if(p==="RW")g.add("RW");else if(p==="W"){g.add("LW");g.add("RW")}else if(p==="F"){g.add("C");g.add("LW");g.add("RW")}else if(p==="D")g.add("D")});return[...g]}
 const newEKey=()=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",b=crypto.getRandomValues(new Uint8Array(8));let k="";b.forEach((x,i)=>{k+=a[x%32];if(i===3)k+="-"});return k};let EKEY="";
@@ -359,7 +361,12 @@ function admin(code){
       <input class="codein" id="code" inputmode="numeric" maxlength="6" placeholder="123456" value="${esc(code||"")}" autocomplete="off">
       <label class="flab" for="key">2. Admin Key <span>(letters and numbers, the private key only you have)</span></label>
       <input class="search" id="key" placeholder="e.g. ABCDE-FGHJK" value="${esc(saved)}" autocomplete="off" style="width:100%;font-size:17px;letter-spacing:.08em">
-      <div><button class="b" type="submit">Open admin page →</button></div></form><div id="msg"></div></div>`);
+      <div class="copyrow" style="margin:0"><button class="b" type="submit">Open admin page →</button><button class="b ghost" type="button" id="bm">🔖 Bookmark this page</button></div></form><div id="bmmsg"></div><div id="msg"></div></div>`);
+  $("#bm").onclick=async()=>{const cv=/^\d{6}$/.test(c.value)?c.value:"";const url=location.origin+"/pools#/admin"+(cv?"/"+cv:"");
+    if(location.hash!==("#/admin"+(cv?"/"+cv:"")))history.replaceState(null,"",url);
+    let copied=false;try{await navigator.clipboard.writeText(url);copied=true}catch(e){}
+    const mac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent),mob=/Android|iPhone|iPad/.test(navigator.userAgent);
+    $("#bmmsg").innerHTML=`<p class="okm">${mob?"Tap your browser's menu (⋮ or the share button), then <b>Add bookmark</b> or <b>Add to Home Screen</b>.":`Press <b>${mac?"⌘ + D":"Ctrl + D"}</b> to bookmark this page.`}${cv?" The bookmark will open this pool's admin sign-in with the Pool Code filled in.":""} Your Admin Key is never saved in the bookmark.${copied?" The link was also copied, so you can paste it somewhere safe.":""}</p>`}
   const c=$("#code");c.oninput=()=>c.value=c.value.replace(/\D/g,"").slice(0,6);
   $("#af").onsubmit=e=>{e.preventDefault();const k=$("#key").value.trim();
     if(/^\d{6}$/.test(k)&&!c.value){c.value=k;$("#key").value="";$("#msg").innerHTML=`<p class="err">That looks like your Pool Code, so it was moved to box 1. Now enter your Admin Key in box 2.</p>`;$("#key").focus();return}
@@ -382,7 +389,7 @@ async function adminList(code,key){
     ${r.entries.length?`<table style="margin-top:10px"><tr><th class="l">Name</th><th>Entry Key</th><th>Entered</th><th></th></tr>${r.entries.map(e=>`<tr><td class="l"><b>${esc(e.name)}</b></td><td style="font-variant-numeric:tabular-nums;letter-spacing:.06em"><b>${esc(e.ekey||"–")}</b></td><td>${esc(new Date(e.entered).toLocaleString("en-CA",{timeZone:"America/Toronto",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td><button class="b red" data-rm="${esc(e.id)}" data-nm="${esc(e.name)}" style="padding:6px 12px">Remove</button></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
     <div class="formula" style="margin:16px 0 0"><h3 style="margin:0 0 4px">🖥️ Show the leaderboard on your website</h3>
       <p style="margin:0 0 8px">Paste this code into your website (for example, in an "HTML" or "Embed code" block). It shows a live, always-current leaderboard: names and scores only, no picks, no Pool Code.</p>
-      <div class="copyrow" style="margin:6px 0"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="embdark"> Dark version</label><button class="b" id="embget">Get the code</button></div>
+      <div class="copyrow" style="margin:6px 0"><label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="embdark" style="flex:none;min-width:0;width:auto;margin:0"> Dark version</label><button class="b" id="embget">Get the code</button></div>
       <div id="embout"></div></div>
     <div class="copyrow" style="margin-top:14px"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><button class="b ghost" id="rf">Refresh</button></div><div id="msg"></div></div>`);
   const embShow=async reset=>{const x=await api({action:"embedcode",code,key,reset:!!reset},true).catch(e=>({ok:false,error:e.message}));
@@ -414,7 +421,7 @@ async function board(code){
       :`<p><span class="pill">Entries closed</span> Scores update automatically through each team's first ${r.pool.n} games of ${esc(mn)}.</p>`)
     :st.state==="open"?`<p><span class="pill">Open for entries</span> Entries close ${st.deadline?fmtD(st.deadline):"when the first playoff game starts"}. Everyone's picks are revealed once entries close.</p>`
     :st.state==="notyet"?`<p><span class="pill">Waiting for the playoffs</span> ${esc(st.message)}</p>`:`<p><span class="pill">Entries closed</span> Scores update automatically as playoff games are played${po&&po.statsUpdated?` (player stats as of ${esc(po.statsUpdated)})`:""}.</p>`;
-  const tbl=rows.length?`<table><tr><th>#</th><th class="l">Name</th>${r.picksVisible?"<th>Skater pts</th><th>Saves ÷ 20</th><th>Team wins</th><th>Score</th>":"<th>Entered</th>"}</tr>
+  const tbl=rows.length?`<table><tr><th>#</th><th class="l">Name</th>${r.picksVisible?"<th>Skater pts</th><th>Save pts</th><th>Team wins</th><th>Score</th>":"<th>Entered</th>"}</tr>
     ${rows.map((x,i)=>`<tr class="${me&&me===x.e.name?"me":""}"><td>${r.picksVisible?x.rk:i+1}</td><td class="l">${r.picksVisible?`<button class="nm" data-i="${i}">${esc(x.e.name)}</button>`:esc(x.e.name)}${me&&me===x.e.name?" <span class=pill>you</span>":""}</td>
       ${r.picksVisible?`<td>${x.s.sk}</td><td>${(x.s.sv/20).toFixed(2)}</td><td>${x.s.tw}</td><td><b>${x.s.total.toFixed(2)}</b></td>`:`<td>${x.e.entered?esc(new Date(x.e.entered).toLocaleDateString("en-CA",{month:"short",day:"numeric"})):""}</td>`}</tr>
       <tr id="pk${i}" hidden><td colspan="6" class="l"></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`;
