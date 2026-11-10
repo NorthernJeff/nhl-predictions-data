@@ -11,6 +11,7 @@
  *              that month count, N = fewest games any team plays that month (stored with the pool).
  */
 import { monthlyValues, snapStatus, takeSnapshot } from './snap.js';
+import { nameProblem } from './names.js';
 const NEED = { C: 2, LW: 2, RW: 2, D: 4, G: 2, T: 5 };
 const NEED_M = { S: 10, G: 2, T: 5 };
 // Admins can only pick one of these fixed name requests (no free text, so the site carries no messages).
@@ -278,8 +279,8 @@ async function addEntry(ctx, p) {
   const st = await statusFor(ctx, pool);
   if (st.state !== 'open') return { ok: false, error: st.message };
   const name = String(p.name || '').trim().replace(/\s+/g, ' ');
-  if (name.length < 2 || name.length > 24) return { ok: false, error: 'Your display name must be 2 to 24 characters.' };
-  if (/[<>]/.test(name)) return { ok: false, error: 'Please use only letters, numbers and simple punctuation in your name.' };
+  const np = nameProblem(name);
+  if (np) return { ok: false, error: np };
   const monthly = pool.type === 'monthly';
   const bad = monthly ? await validMonthly(ctx, p.picks, pool) : await validPicks(ctx, p.picks, pool.season);
   if (bad) return { ok: false, error: bad };
