@@ -8,8 +8,9 @@ export default {
     const url = new URL(request.url);
     const isRead = request.method === 'GET' || request.method === 'HEAD';
     const isApi = url.pathname === '/api' || url.pathname.startsWith('/api/');
-    // One official address: www.puck-off.com and the old workers.dev address move to puck-off.com (same page)
-    if (url.hostname === 'www.puck-off.com' || (url.hostname.endsWith('.workers.dev') && isRead && !isApi)) {
+    // One official address: hockeypooler.com. www, the old puck-off.com domain and workers.dev move there (same page).
+    const OLD = ['www.hockeypooler.com', 'puck-off.com', 'www.puck-off.com'];
+    if ((OLD.includes(url.hostname) || url.hostname.endsWith('.workers.dev')) && isRead && !isApi) {
       return Response.redirect(SITE + url.pathname + url.search, 301);
     }
     if (isApi) return onRequest({ request, env, ctx });

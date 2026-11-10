@@ -10,6 +10,8 @@
   },
   // Your own domain (registered at Cloudflare). www forwards to the main address in worker/index.js.
   "routes": [
+    { "pattern": "hockeypooler.com", "custom_domain": true },
+    { "pattern": "www.hockeypooler.com", "custom_domain": true },
     { "pattern": "puck-off.com", "custom_domain": true },
     { "pattern": "www.puck-off.com", "custom_domain": true }
   ],

@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>/* The old GitHub Pages address forwards to the main site on puck-off.com (same page). */if(/github\.io$/i.test(location.hostname)){location.replace("https://puck-off.com"+location.pathname.replace(/^\/nhl-predictions-data/,"").replace(/(index)?\.html$/,"")+location.search+location.hash)}</script>
+<script>/* The old GitHub Pages address forwards to the main site on hockeypooler.com (same page). */if(/github\.io$/i.test(location.hostname)){location.replace("https://hockeypooler.com"+location.pathname.replace(/^\/nhl-predictions-data/,"").replace(/(index)?\.html$/,"")+location.search+location.hash)}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NHL Predictions 2026-27: Win Probabilities, Standings &amp; Playoff Odds | Puck-Off</title>
+<title>NHL Predictions 2026-27: Win Probabilities, Standings &amp; Playoff Odds | Hockey Pooler</title>
 <meta name="description" content="Free NHL predictions for every game: win probabilities, team momentum charts, standings, points leaders, playoff bracket and Stanley Cup odds. Updated hourly.">
-<link rel="canonical" href="https://puck-off.com/">
+<link rel="canonical" href="https://hockeypooler.com/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#11151b">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Puck-Off">
-<meta property="og:title" content="Puck-Off · NHL Predictions &amp; Win Probabilities">
+<meta property="og:site_name" content="Hockey Pooler">
+<meta property="og:title" content="Hockey Pooler · NHL Predictions &amp; Win Probabilities">
 <meta property="og:description" content="Win probabilities for every NHL game, momentum charts, standings, playoff bracket and Stanley Cup odds — plus free hockey pools.">
-<meta property="og:url" content="https://puck-off.com/">
-<meta property="og:image" content="https://puck-off.com/og-image.png">
+<meta property="og:url" content="https://hockeypooler.com/">
+<meta property="og:image" content="https://hockeypooler.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://puck-off.com/og-image.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"Puck-Off","alternateName":"Puck-Off Hockey Predictions","url":"https://puck-off.com/"},{"@type":"WebApplication","name":"Puck-Off NHL Predictions","url":"https://puck-off.com/","applicationCategory":"SportsApplication","operatingSystem":"Any","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Win probabilities for every NHL game, team momentum charts, standings, points leaders, playoff bracket, Stanley Cup odds and free hockey pools."}]}</script>
+<meta name="twitter:image" content="https://hockeypooler.com/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"Hockey Pooler","alternateName":"HockeyPooler.com","url":"https://hockeypooler.com/"},{"@type":"WebApplication","name":"Hockey Pooler NHL Predictions","url":"https://hockeypooler.com/","applicationCategory":"SportsApplication","operatingSystem":"Any","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Win probabilities for every NHL game, team momentum charts, standings, points leaders, playoff bracket, Stanley Cup odds and free hockey pools."}]}</script>
 
 <style>
 :root{--card:#fff;--soft:#eef1f5;--sel:#e8effd;--line2:#eef0f3;--bg:#ffffff;--panel:#f7f8fa;--panel2:#ffffff;--line:#e3e6eb;--ink:#1c2230;--ink2:#5b6475;--muted:#8a93a3;--win:#26a65b;--loss:#e5484d;--tie:#2f6fed;--acc:#2f6fed}
@@ -322,7 +322,7 @@ footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}footer a.flin
 <body>
 <div id="app">
 <header>
-  <a class="brandlogo" href="/" title="Puck-Off.com home"><img src="/logo.png" alt="" width="30" height="30"><span>Puck-Off.com</span></a><span class="brandsep" aria-hidden="true">·</span><h1 id="ttl">NHL 2026-27 Regular Season · Win/Loss Lines</h1>
+  <a class="brandlogo" href="/" title="Hockey Pooler home"><img src="/logo.png" alt="" width="30" height="30"><span>Hockey Pooler</span></a><span class="brandsep" aria-hidden="true">·</span><h1 id="ttl">NHL 2026-27 Regular Season · Win/Loss Lines</h1>
   <span class="sub" id="upd">Loading…</span>
   <div class="legend">
     <span class="lg">Win ↗ +1</span><span class="lg">Loss ↘ −1</span><span class="lg">Tie → 0</span>
@@ -917,7 +917,7 @@ function poActive(){return !!(PO&&PO.season===SEASON.season)}
 function poGames(){return poActive()&&PO.games?PO.games:[]}
 function poUnlocked(){return poActive()&&!!PO.seeds}
 function updateTitle(){const ph=SEASON.phase==="playoffs"?"Playoffs":SEASON.phase==="offseason"?"Season":"Regular Season";
-  const h=document.getElementById("ttl");if(h)h.textContent=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`;document.title=SEASON.phase==="playoffs"?`NHL Playoff Predictions ${SEASON.season}: Bracket & Stanley Cup Odds | Puck-Off`:`NHL Predictions ${SEASON.season}: Win Probabilities, Standings & Playoff Odds | Puck-Off`}
+  const h=document.getElementById("ttl");if(h)h.textContent=`NHL ${SEASON.season} ${ph} · Win/Loss Lines`;document.title=SEASON.phase==="playoffs"?`NHL Playoff Predictions ${SEASON.season}: Bracket & Stanley Cup Odds | Hockey Pooler`:`NHL Predictions ${SEASON.season}: Win Probabilities, Standings & Playoff Odds | Hockey Pooler`}
 function updatePoTabs(){document.querySelectorAll("nav.tabs a.po").forEach(a=>{a.classList.toggle("locked",!poUnlocked());a.title=poUnlocked()?"":"Unlocks once all 16 playoff teams are known"})}
 function refreshAll(){_eloCache=null;_brCache=null;updateTitle();updatePoTabs();if(!DATA)return;renderStats();if(curTab==="home")renderHome();renderLeaders();renderBracket();renderPoLeaders()}
 fetch("season.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SEASON=Object.assign({archives:[]},d);

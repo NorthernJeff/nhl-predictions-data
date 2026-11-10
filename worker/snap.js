@@ -2,7 +2,7 @@
 // Each snapshot stores every skater's season points and every goalie's season saves together with how many
 // games each team had played at that moment. A monthly pool then counts, for a team's players, the change
 // between "team had played k0 games" (before the month) and "team had played k0 + N games".
-const UA = { 'User-Agent': 'puck-off.com monthly pool snapshots', Accept: 'application/json' };
+const UA = { 'User-Agent': 'hockeypooler.com monthly pool snapshots', Accept: 'application/json' };
 export const normName = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
 async function ensure(db) {
@@ -21,7 +21,7 @@ async function getJ(url) {
 export async function takeSnapshot(env) {
   const db = env.DB; if (!db) return { ok: false, error: 'no DB' };
   await ensure(db);
-  const seasonFile = await (await env.ASSETS.fetch(new Request('https://puck-off.com/season.json'))).json();
+  const seasonFile = await (await env.ASSETS.fetch(new Request('https://hockeypooler.com/season.json'))).json();
   const season = seasonFile.season; // "2026-27"
   if (seasonFile.phase && seasonFile.phase !== 'regular') return { ok: true, skipped: 'not regular season' };
   const sid = season.slice(0, 4) + '20' + season.slice(5, 7); // 20262027

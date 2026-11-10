@@ -2,4 +2,4 @@ User-agent: *
 Disallow: /api
 Allow: /
 
-Sitemap: https://puck-off.com/sitemap.xml
+Sitemap: https://hockeypooler.com/sitemap.xml

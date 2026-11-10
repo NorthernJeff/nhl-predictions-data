@@ -2,8 +2,8 @@
 //   /nhl-predictions  — today's and tomorrow's games with win probabilities, last night's results,
 //                       standings and points leaders, as plain HTML Google can read.
 //   /sitemap.xml      — list of the site's pages for search engines.
-export const SITE = 'https://puck-off.com';
-export const BRAND = 'Puck-Off';
+export const SITE = 'https://hockeypooler.com';
+export const BRAND = 'Hockey Pooler';
 
 const TEAMS = [
   ['Atlantic','BOS','Boston Bruins'],['Atlantic','BUF','Buffalo Sabres'],['Atlantic','DET','Detroit Red Wings'],['Atlantic','FLA','Florida Panthers'],['Atlantic','MTL','Montréal Canadiens'],['Atlantic','OTT','Ottawa Senators'],['Atlantic','TBL','Tampa Bay Lightning'],['Atlantic','TOR','Toronto Maple Leafs'],
@@ -155,7 +155,7 @@ export async function renderPredictions(env, origin) {
   ];
 
   const body = `
-<header class="top"><a class="brandlogo" href="/" title="Puck-Off.com home"><img src="/logo.png" alt="" width="30" height="30"><span>Puck-Off.com</span></a><nav><a href="/">Open the app</a><a href="/nhl-playoff-pool">Playoff pool</a></nav></header>
+<header class="top"><a class="brandlogo" href="/" title="Hockey Pooler home"><img src="/logo.png" alt="" width="30" height="30"><span>Hockey Pooler</span></a><nav><a href="/">Open the app</a><a href="/nhl-playoff-pool">Playoff pool</a></nav></header>
 <main>
 <p class="crumb"><a href="/">${BRAND}</a> › NHL Predictions Today</p>
 <h1>NHL Predictions Today</h1>
