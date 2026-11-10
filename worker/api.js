@@ -13,6 +13,9 @@
 import { monthlyValues, snapStatus, takeSnapshot } from './snap.js';
 const NEED = { C: 2, LW: 2, RW: 2, D: 4, G: 2, T: 5 };
 const NEED_M = { S: 10, G: 2, T: 5 };
+// Admins can only pick one of these fixed name requests (no free text, so the site carries no messages).
+const NAME_NOTES = { '1': 'Please use your initials.', '2': 'Please use a nickname.', '3': 'Please use your initials plus a team or number, e.g. JL-Habs.' };
+const noteText = n => NAME_NOTES[String(n || '')] || '';
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const monthName = m => MONTHS[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4);
 const TZ = 'America/Toronto';
@@ -204,7 +207,7 @@ async function getPool(ctx, p) {
     if (reveal) { try { e.picks = JSON.parse(r.picks); } catch (x) { e.picks = null; } }
     return e;
   });
-  const info = { code: pool.code, type: pool.type, season: pool.season, note: pool.note || '' };
+  const info = { code: pool.code, type: pool.type, season: pool.season, note: noteText(pool.note) };
   if (pool.type === 'monthly' && pool.meta) {
     Object.assign(info, { month: pool.meta.month, monthName: monthName(pool.meta.month), n: pool.meta.n, players: pool.meta.players, frozen: pool.meta.frozen });
     if (reveal) {
@@ -304,7 +307,7 @@ async function adminView(ctx, p) {
   if (err) return { ok: false, error: err };
   const { results } = await ctx.env.DB.prepare('SELECT name, name_key, entered FROM entries WHERE code = ? ORDER BY entered').bind(pool.code).all();
   const st = await statusFor(ctx, pool);
-  return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season, note: pool.note || '', monthName: pool.meta && pool.meta.month ? monthName(pool.meta.month) : null }, status: st,
+  return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season, note: String(NAME_NOTES[pool.note] ? pool.note : ''), monthName: pool.meta && pool.meta.month ? monthName(pool.meta.month) : null }, status: st,
     entries: results.map(r => ({ name: r.name, id: r.name_key, entered: r.entered })) };
 }
 async function adminRemove(ctx, p) {
@@ -317,7 +320,8 @@ async function adminRemove(ctx, p) {
 async function adminNote(ctx, p) {
   const { pool, err } = await adminPool(ctx, p);
   if (err) return { ok: false, error: err };
-  const note = String(p.note || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 140);
-  await ctx.env.DB.prepare('UPDATE pools SET note = ? WHERE code = ?').bind(note || null, pool.code).run();
-  return { ok: true, note };
+  const n = String(p.note || '');
+  if (n && !NAME_NOTES[n]) return { ok: false, error: 'Please choose one of the listed requests.' };
+  await ctx.env.DB.prepare('UPDATE pools SET note = ? WHERE code = ?').bind(n || null, pool.code).run();
+  return { ok: true, note: n, text: noteText(n) };
 }
