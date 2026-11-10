@@ -52,6 +52,8 @@ p{color:var(--ink2);margin:6px 0}
 .secth{font-size:17px;margin:12px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}.sect h3:not(.secth){margin-top:14px}
 .namebox input{font:inherit;font-size:17px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(360px,100%)}
 .flab{font-weight:700;font-size:14px;margin-bottom:-4px}.flab span{font-weight:400;color:var(--muted)}
+.formula.score{background:#e6f0ff;border-left-color:#2f6fed}body.dark .formula.score{background:#17253d}
+.ekey{background:#fff6cc!important;border:1px solid #e9bd3f!important}body.dark .ekey{background:#3a3214!important}
 .frules{margin:6px 0 8px;padding-left:22px}.frules li{margin:3px 0}
 .adminnote{background:#fff4c2;color:#3a2a00;border:1px solid #e9bd3f;border-radius:8px;padding:8px 12px;margin:4px 0 10px;font-size:14.5px}.adminnote b{color:#3a2a00}
 .ekey{margin-top:16px;background:var(--soft);border:1px dashed #e9bd3f;border-radius:10px;padding:10px 14px}.ekey h3{margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ek{font-size:22px;letter-spacing:.12em;font-variant-numeric:tabular-nums}.ekok{display:flex;align-items:center;gap:8px;font-weight:700;margin-top:6px;cursor:pointer}
@@ -103,8 +105,8 @@ const NEED={C:2,LW:2,RW:2,D:4,G:2,T:5};
 const GNAME={C:"Centres",LW:"Left Wings",RW:"Right Wings",D:"Defence",G:"Goaltenders",T:"Teams",S:"Skaters (top 25)"};
 const NEED_M={S:10,G:2,T:5};
 const fRules=(sk,po)=>`<b>How scoring works</b><ol class="frules"><li><b>1 point</b> for every point (goal or assist) scored by your ${sk} skaters.</li><li><b>1 point</b> for every ${po?"playoff ":""}win by your 5 teams.</li><li><b>1 point</b> for every 20 saves by your 2 goaltenders. Each save counts, so 30 saves = 1.5 points.</li></ol>`;
-const formulaM=(n,mn)=>`<div class="formula">${fRules(10,false)}Only <b>each team's first ${n} games of ${esc(mn)}</b> count, so every player and team gets the same number of games. Highest total wins.</div>`;
-const FORMULA=`<div class="formula">${fRules(10,true)}Highest total wins.</div>`;
+const formulaM=(n,mn)=>`<div class="formula score">${fRules(10,false)}Only <b>each team's first ${n} games of ${esc(mn)}</b> count, so every player and team gets the same number of games. Highest total wins.</div>`;
+const FORMULA=`<div class="formula score">${fRules(10,true)}Highest total wins.</div>`;
 const fmtD=ms=>new Date(ms).toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
 function posGroups(pos){const g=new Set();String(pos||"").toUpperCase().split(/[^A-Z]+/).forEach(p=>{if(p==="C")g.add("C");else if(p==="LW")g.add("LW");else if(p==="RW")g.add("RW");else if(p==="W"){g.add("LW");g.add("RW")}else if(p==="F"){g.add("C");g.add("LW");g.add("RW")}else if(p==="D")g.add("D")});return[...g]}
 const newEKey=()=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",b=crypto.getRandomValues(new Uint8Array(8));let k="";b.forEach((x,i)=>{k+=a[x%32];if(i===3)k+="-"});return k};let EKEY="";
