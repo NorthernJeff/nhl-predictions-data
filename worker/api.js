@@ -78,7 +78,7 @@ async function ensureTables(db) {
   const cols = await db.prepare('PRAGMA table_info(pools)').all();
   for (const col of ['meta', 'admin_hash', 'note']) if (!cols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE pools ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
   const ecols = await db.prepare('PRAGMA table_info(entries)').all();
-  if (!ecols.results.some(c => c.name === 'device')) { try { await db.prepare('ALTER TABLE entries ADD COLUMN device TEXT').run(); } catch (e) {} }
+  for (const col of ['device', 'ekey']) if (!ecols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE entries ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
   tablesReady = true;
 }
 
@@ -281,6 +281,9 @@ async function addEntry(ctx, p) {
   const name = String(p.name || '').trim().replace(/\s+/g, ' ');
   const np = nameProblem(name);
   if (np) return { ok: false, error: np };
+  // Entry Key: random code shown to the contestant on the form; only the pool admin can see it afterwards.
+  const ekey = String(p.ekey || '').toUpperCase();
+  if (!/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(ekey)) return { ok: false, error: 'Your Entry Key is missing. Please reload the page and try again.' };
   const monthly = pool.type === 'monthly';
   const bad = monthly ? await validMonthly(ctx, p.picks, pool) : await validPicks(ctx, p.picks, pool.season);
   if (bad) return { ok: false, error: bad };
@@ -289,8 +292,8 @@ async function addEntry(ctx, p) {
   // The (code, name_key) primary key makes duplicate names impossible, even for simultaneous entries.
   const dup = await ctx.env.DB.prepare('SELECT 1 FROM entries WHERE code = ? AND device = ?').bind(pool.code, ctx.device).first();
   if (dup) return { ok: false, error: 'This device has already entered this pool. Each device can enter a pool only once.' };
-  const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO entries (code, name, name_key, picks, entered, device) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(pool.code, name, nameKey(name), JSON.stringify(clean), new Date().toISOString(), ctx.device).run();
+  const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO entries (code, name, name_key, picks, entered, device, ekey) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(pool.code, name, nameKey(name), JSON.stringify(clean), new Date().toISOString(), ctx.device, ekey).run();
   if (!r.meta || r.meta.changes !== 1) return { ok: false, error: 'That name is already taken in this pool. Please choose another.' };
   return { ok: true, name };
 }
@@ -306,10 +309,10 @@ async function adminPool(ctx, p) {
 async function adminView(ctx, p) {
   const { pool, err } = await adminPool(ctx, p);
   if (err) return { ok: false, error: err };
-  const { results } = await ctx.env.DB.prepare('SELECT name, name_key, entered FROM entries WHERE code = ? ORDER BY entered').bind(pool.code).all();
+  const { results } = await ctx.env.DB.prepare('SELECT name, name_key, entered, ekey FROM entries WHERE code = ? ORDER BY entered').bind(pool.code).all();
   const st = await statusFor(ctx, pool);
   return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season, note: String(NAME_NOTES[pool.note] ? pool.note : ''), monthName: pool.meta && pool.meta.month ? monthName(pool.meta.month) : null }, status: st,
-    entries: results.map(r => ({ name: r.name, id: r.name_key, entered: r.entered })) };
+    entries: results.map(r => ({ name: r.name, id: r.name_key, entered: r.entered, ekey: r.ekey || '' })) };
 }
 async function adminRemove(ctx, p) {
   const { pool, err } = await adminPool(ctx, p);

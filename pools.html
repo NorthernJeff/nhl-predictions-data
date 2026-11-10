@@ -52,6 +52,7 @@ p{color:var(--ink2);margin:6px 0}
 .secth{font-size:17px;margin:12px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}.sect h3:not(.secth){margin-top:14px}
 .namebox input{font:inherit;font-size:17px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(360px,100%)}
 .adminnote{background:#fff4c2;color:#3a2a00;border:1px solid #e9bd3f;border-radius:8px;padding:8px 12px;margin:4px 0 10px;font-size:14.5px}.adminnote b{color:#3a2a00}
+.ekey{margin-top:16px;background:var(--soft);border:1px dashed #e9bd3f;border-radius:10px;padding:10px 14px}.ekey h3{margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ek{font-size:22px;letter-spacing:.12em;font-variant-numeric:tabular-nums}.ekok{display:flex;align-items:center;gap:8px;font-weight:700;margin-top:6px;cursor:pointer}
 .warn{display:inline-block;margin-left:10px;color:var(--bad);font-weight:700;font-size:13.5px}
 .picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
 .grp{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
@@ -101,6 +102,7 @@ const formulaM=(n,mn)=>`<div class="formula"><b>Score</b> = (total points of you
 const FORMULA=`<div class="formula"><b>Score</b> = (total points of your 10 forwards and defence) + (total saves of your 2 goaltenders ÷ 20) + (total playoff wins of your 5 teams). Highest score wins.</div>`;
 const fmtD=ms=>new Date(ms).toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
 function posGroups(pos){const g=new Set();String(pos||"").toUpperCase().split(/[^A-Z]+/).forEach(p=>{if(p==="C")g.add("C");else if(p==="LW")g.add("LW");else if(p==="RW")g.add("RW");else if(p==="W"){g.add("LW");g.add("RW")}else if(p==="F"){g.add("C");g.add("LW");g.add("RW")}else if(p==="D")g.add("D")});return[...g]}
+const newEKey=()=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",b=crypto.getRandomValues(new Uint8Array(8));let k="";b.forEach((x,i)=>{k+=a[x%32];if(i===3)k+="-"});return k};let EKEY="";
 const lastName=n=>{const p=String(n).replace(/\s+(Jr\.?|Sr\.?|II|III)$/i,"").trim().split(/\s+/);return p[p.length-1]};
 const byLast=(a,b)=>lastName(a.n).localeCompare(lastName(b.n),"en",{sensitivity:"base"})||a.n.localeCompare(b.n);
 
@@ -229,7 +231,7 @@ async function form(code){
   let r;try{r=await api({action:"pool",code})}catch(e){return view(`<div class="card"><p class="err">${esc(e.message)}</p></div>`)}
   if(!r.ok)return view(`<div class="card"><p class="err">${esc(r.error)}</p><a class="b ghost" href="#/enter" style="text-decoration:none">Try another code</a></div>`);
   if(r.pool.type==="monthly")return formMonthly(code,r);
-  const st=r.status,season=r.pool.season;
+  const st=r.status,season=r.pool.season;EKEY=newEKey();
   if(st.state!=="open")return view(`<div class="card"><h2>Pool ${esc(code)} · ${esc(season)} Playoffs</h2><p>${esc(st.message)}</p>${FORMULA}
     <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a></div></div>`);
   const po=await poFor(season);const teams=playoffTeams(po);const taken=new Set(r.entries.map(e=>e.name.trim().replace(/\s+/g," ").toLowerCase()));
@@ -248,6 +250,9 @@ async function form(code){
   const grp=g=>`<div class="grp"><h4>${GNAME[g]} <span class="n" id="n_${g}">0 / ${NEED[g]}</span></h4><div class="lst">${g==="T"?tlist.map(t=>`<label data-g="T" data-id="${t}" data-q="${esc((t+" "+tname(t)).toLowerCase())}"><input type="checkbox">${bdg(t)} <span>${esc(tname(t))}</span></label>`).join(""):groups[g].map(p=>row(g,p)).join("")||`<p class="muted" style="padding:8px 12px">No players listed.</p>`}</div></div>`;
   view(`<div class="card"><h2>Entry Form · Pool ${esc(code)}</h2><p>${esc(season)} Stanley Cup Playoffs. Entries close ${st.deadline?`<b>${fmtD(st.deadline)}</b> (when the first playoff game starts)`:"when the first playoff game starts"}.</p>${FORMULA}
     <div class="namebox" style="margin-top:14px"><h3>Your display name</h3>${r.pool.note?`<p class="adminnote">📣 <b>From the pool admin:</b> ${esc(r.pool.note)}</p>`:""}<input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
+    <div class="ekey"><h3>🎟️ Your Entry Key: <span class="ek">${EKEY}</span> <button class="b" type="button" data-copy="${EKEY}" style="padding:6px 12px;font-size:13px">Copy</button></h3>
+      <p>Save this key. If you win, give it to the pool admin to prove the entry is yours. Only you and the admin can see it.</p>
+      <label class="ekok"><input type="checkbox" id="ekok"> I've saved my Entry Key.</label></div>
     <h3 style="margin-top:18px">Your picks</h3><p>Choose 2 centres, 2 left wings, 2 right wings, 4 defence, 2 goaltenders and 5 teams. Players are listed by position, sorted by last name; a player listed at more than one position can only be picked once.</p>
     <input class="search" id="q" placeholder="Search players or teams…">
     <div class="picker">${["C","LW","RW","D","G","T"].map(grp).join("")}</div>
@@ -261,21 +266,22 @@ async function form(code){
     if(nm&&taken.has(nm.toLowerCase())){nmOk=false;$("#nmmsg").innerHTML=`<p class="err">That name is already taken in this pool.</p>`}else $("#nmmsg").innerHTML=np&&nm.length>=2?`<p class="err">${esc(np)}</p>`:"";
     const left=Object.keys(NEED).filter(g=>sel[g].length<NEED[g]).map(g=>`${NEED[g]-sel[g].length} ${GNAME[g].toLowerCase()}`);
     $("#sum").textContent=!nmOk?"Enter a display name (2–24 letters or numbers) that nobody in this pool is using.":left.length?"Still to pick: "+left.join(", ")+".":"All set — press Enter to submit.";
-    $("#go").disabled=!(done&&nmOk)}
+    const ek=$("#ekok").checked;if(nmOk&&!left.length&&!ek)$("#sum").textContent="Save your Entry Key and tick the box to enter.";
+    $("#go").disabled=!(done&&nmOk&&ek)}
   app.querySelectorAll("label[data-g]").forEach(l=>l.querySelector("input").onchange=e=>{const g=l.dataset.g,id=l.dataset.id;
     if(e.target.checked){if(sel[g].length<NEED[g])sel[g].push(id)}else sel[g]=sel[g].filter(x=>x!==id);refresh()});
-  $("#nm").oninput=refresh;
+  $("#nm").oninput=refresh;$("#ekok").onchange=refresh;bindCopy();
   $("#q").oninput=()=>{const q=$("#q").value.trim().toLowerCase();app.querySelectorAll("label[data-g]").forEach(l=>l.style.display=!q||l.dataset.q.includes(q)?"":"none")};
-  $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p>`,async()=>{
+  $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p><p>Your Entry Key: <b>${EKEY}</b></p>`,async()=>{
     const b=$("#go");b.disabled=true;$("#sum").textContent="Sending your entry…";
-    try{const name=$("#nm").value.trim().replace(/\s+/g," ");const res=await api({action:"enter",code,name,picks:sel},true);
+    try{const name=$("#nm").value.trim().replace(/\s+/g," ");const res=await api({action:"enter",code,name,picks:sel,ekey:EKEY},true);
       if(!res.ok)throw new Error(res.error);
       try{sessionStorage.setItem("nhlwl:poolme:"+code,JSON.stringify(res.name))}catch(e){}
       location.hash="#/board/"+code}
     catch(e){$("#sum").innerHTML=`<span class="err">${esc(e.message)}</span>`;b.disabled=false}});
   refresh()}
 
-function formMonthly(code,r){
+function formMonthly(code,r){EKEY=newEKey();
   const st=r.status,P=r.pool,mn=P.monthName,F=formulaM(P.n,mn);
   if(st.state!=="open")return view(`<div class="card"><h2>Pool ${esc(code)} · ${esc(mn)}</h2><p>${esc(st.message)}</p>${F}
     <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a></div></div>`);
@@ -288,6 +294,9 @@ function formMonthly(code,r){
   const grp=(g,body,tall)=>`<div class="grp"><h4>${GNAME[g]} <span class="n" id="n_${g}">0 / ${NEED_M[g]}</span></h4><div class="lst" style="max-height:${tall?"none":"820px"}">${body}</div></div>`;
   view(`<div class="card"><h2>Entry Form · Pool ${esc(code)}</h2><p>${esc(mn)} monthly pool. Entries close ${st.deadline?`<b>${fmtD(st.deadline)}</b> (when the first game of ${esc(mn)} starts)`:`when the first game of ${esc(mn)} starts`}.</p>${F}
     <div class="namebox" style="margin-top:14px"><h3>Your display name</h3>${r.pool.note?`<p class="adminnote">📣 <b>From the pool admin:</b> ${esc(r.pool.note)}</p>`:""}<input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
+    <div class="ekey"><h3>🎟️ Your Entry Key: <span class="ek">${EKEY}</span> <button class="b" type="button" data-copy="${EKEY}" style="padding:6px 12px;font-size:13px">Copy</button></h3>
+      <p>Save this key. If you win, give it to the pool admin to prove the entry is yours. Only you and the admin can see it.</p>
+      <label class="ekok"><input type="checkbox" id="ekok"> I've saved my Entry Key.</label></div>
     <h3 style="margin-top:18px">Your picks</h3><p>Choose 10 skaters from the top 25 points leaders (any positions), 2 goaltenders and 5 teams. The top-25 list was frozen when this pool was created${P.frozen?` (points as of ${esc(P.frozen)})`:""}, so it's the same for everyone. Players are sorted by last name.</p>
     <input class="search" id="q" placeholder="Search players or teams…">
     <div class="picker">${grp("S",sk.map(p=>row("S",p)).join(""),true)}${grp("G",gk.map(p=>row("G",p)).join(""))}${grp("T",tlist.map(t=>`<label data-g="T" data-id="${t}" data-q="${esc((t+" "+tname(t)).toLowerCase())}"><input type="checkbox">${bdg(t)} <span>${esc(tname(t))}</span></label>`).join(""))}</div>
@@ -300,14 +309,15 @@ function formMonthly(code,r){
     if(nm&&taken.has(nm.toLowerCase())){nmOk=false;$("#nmmsg").innerHTML=`<p class="err">That name is already taken in this pool.</p>`}else $("#nmmsg").innerHTML=np&&nm.length>=2?`<p class="err">${esc(np)}</p>`:"";
     const lbl={S:"skaters",G:"goaltenders",T:"teams"};const left=Object.keys(NEED_M).filter(g=>sel[g].length<NEED_M[g]).map(g=>`${NEED_M[g]-sel[g].length} ${lbl[g]}`);
     $("#sum").textContent=!nmOk?"Enter a display name (2–24 letters or numbers) that nobody in this pool is using.":left.length?"Still to pick: "+left.join(", ")+".":"All set — press Enter to submit.";
-    $("#go").disabled=!(done&&nmOk)}
+    const ek=$("#ekok").checked;if(nmOk&&!left.length&&!ek)$("#sum").textContent="Save your Entry Key and tick the box to enter.";
+    $("#go").disabled=!(done&&nmOk&&ek)}
   app.querySelectorAll("label[data-g]").forEach(l=>l.querySelector("input").onchange=e=>{const g=l.dataset.g,id=l.dataset.id;
     if(e.target.checked){if(sel[g].length<NEED_M[g])sel[g].push(id)}else sel[g]=sel[g].filter(x=>x!==id);refresh()});
-  $("#nm").oninput=refresh;
+  $("#nm").oninput=refresh;$("#ekok").onchange=refresh;bindCopy();
   $("#q").oninput=()=>{const q=$("#q").value.trim().toLowerCase();app.querySelectorAll("label[data-g]").forEach(l=>l.style.display=!q||l.dataset.q.includes(q)?"":"none")};
-  $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p>`,async()=>{
+  $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p><p>Your Entry Key: <b>${EKEY}</b></p>`,async()=>{
     const b=$("#go");b.disabled=true;$("#sum").textContent="Sending your entry…";
-    try{const name=$("#nm").value.trim().replace(/\s+/g," ");const res=await api({action:"enter",code,name,picks:sel},true);
+    try{const name=$("#nm").value.trim().replace(/\s+/g," ");const res=await api({action:"enter",code,name,picks:sel,ekey:EKEY},true);
       if(!res.ok)throw new Error(res.error);
       try{sessionStorage.setItem("nhlwl:poolme:"+code,JSON.stringify(res.name))}catch(e){}
       location.hash="#/board/"+code}
@@ -337,9 +347,10 @@ async function adminList(code,key){
   const what=r.pool.type==="monthly"?`${esc(r.pool.monthName)} monthly pool`:`${esc(r.pool.season)} playoff pool`;
   view(`<div class="card"><h2>Pool Admin · ${esc(code)}</h2><p>${what} · ${r.entries.length} ${r.entries.length===1?"entry":"entries"} · ${r.status.state==="open"?"open for entries":"entries closed"}</p>
     <p>Remove any entry you don't recognize, or extra entries from the same person. Each device can enter only once, but someone could still enter again from a different phone or computer. Removing an entry can't be undone.</p>
+    <p><b>Confirming a winner:</b> ask them for their Entry Key and check that it matches the key beside their name.</p>
     <div class="formula" style="margin:14px 0"><h3 style="margin:0 0 4px">📣 Name request</h3><p style="margin:0 0 8px">Optional. Shown on the Entry Form above the display-name box.</p>
       <div class="copyrow" style="margin:6px 0"><select id="note" class="search" style="width:auto;min-width:300px">${[["","No request"],["1","Please use your initials."],["2","Please use a nickname."],["3","Please use your initials plus a team or number, e.g. JL-Habs."]].map(([v,t])=>`<option value="${v}"${(r.pool.note||"")===v?" selected":""}>${esc(t)}</option>`).join("")}</select><button class="b" id="savenote">Save</button></div><div id="notemsg"></div></div>
-    ${r.entries.length?`<table style="margin-top:10px"><tr><th class="l">Name</th><th>Entered</th><th></th></tr>${r.entries.map(e=>`<tr><td class="l"><b>${esc(e.name)}</b></td><td>${esc(new Date(e.entered).toLocaleString("en-CA",{timeZone:"America/Toronto",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td><button class="b red" data-rm="${esc(e.id)}" data-nm="${esc(e.name)}" style="padding:6px 12px">Remove</button></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
+    ${r.entries.length?`<table style="margin-top:10px"><tr><th class="l">Name</th><th>Entry Key</th><th>Entered</th><th></th></tr>${r.entries.map(e=>`<tr><td class="l"><b>${esc(e.name)}</b></td><td style="font-variant-numeric:tabular-nums;letter-spacing:.06em"><b>${esc(e.ekey||"–")}</b></td><td>${esc(new Date(e.entered).toLocaleString("en-CA",{timeZone:"America/Toronto",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td><button class="b red" data-rm="${esc(e.id)}" data-nm="${esc(e.name)}" style="padding:6px 12px">Remove</button></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
     <div class="copyrow" style="margin-top:14px"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><button class="b ghost" id="rf">Refresh</button></div><div id="msg"></div></div>`);
   $("#rf").onclick=()=>adminList(code,key);
   $("#savenote").onclick=async()=>{const x=await api({action:"setnote",code,key,note:$("#note").value},true).catch(e=>({ok:false,error:e.message}));
