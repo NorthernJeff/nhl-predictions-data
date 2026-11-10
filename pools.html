@@ -149,7 +149,7 @@ function view(h){app.innerHTML=h;window.scrollTo(0,0)}
 function route(){const h=(location.hash||"#/").slice(1).split("/").filter(Boolean);
   ready.then(()=>{const [v,a]=h;
     if(!v)return home();if(v==="start")return start();if(v==="created")return created(a);if(v==="enter")return enter(a);
-    if(v==="form")return form(a);if(v==="rank")return rank(a);if(v==="board")return board(a);home()})}
+    if(v==="form")return form(a);if(v==="rank")return rank(a);if(v==="board")return board(a);if(v==="admin")return admin(a);home()})}
 window.addEventListener("hashchange",route);route();
 
 function home(){view(`<div class="card"><h1>🏒 Hockey Pools</h1><p>Free to enter. Start a pool for your friends, family or clients, share the 6-digit Pool Code, and follow the standings as the games are played.</p>
@@ -157,6 +157,7 @@ function home(){view(`<div class="card"><h1>🏒 Hockey Pools</h1><p>Free to ent
     <a class="choice gold" href="#/start"><b>Start a pool</b><span>Become the pool's admin and get a Pool Code to share.</span></a>
     <a class="choice" href="#/enter"><b>Enter a pool</b><span>Have a Pool Code? Make your picks here.</span></a>
     <a class="choice" href="#/rank"><b>Check your ranking</b><span>See a pool's leaderboard and everyone's picks.</span></a>
+    <a class="choice" href="#/admin"><b>Pool admin</b><span>Started a pool? Use your Admin Key to manage its entries.</span></a>
   </div></div>${noApi()}`)}
 const noApi=()=>CFG&&CFG.api?"":`<div class="card"><p class="err">Pools are almost ready: the pool service still has to be connected, so starting or entering a pool won't work yet.</p></div>`;
 
@@ -167,10 +168,10 @@ function start(){const reg=SEASON.season||"";view(`<div class="card"><h2>Start a
     <button class="choice gold" id="mkpo"><b>Playoffs</b><span>${esc(reg)} Stanley Cup Playoffs pool.</span></button>
   </div><div id="msg"></div></div>`);
   $("#mkmo").onclick=async()=>{const b=$("#mkmo");b.disabled=true;$("#msg").innerHTML=`<p>Creating your monthly pool…</p>`;
-    try{const r=await api({action:"create",type:"monthly"},true);if(!r.ok)throw new Error(r.error);location.hash="#/created/"+r.code}
+    try{const r=await api({action:"create",type:"monthly"},true);if(!r.ok)throw new Error(r.error);try{sessionStorage.setItem("nhlwl:admin:"+r.code,JSON.stringify(r.adminKey))}catch(e){}location.hash="#/created/"+r.code}
     catch(e){$("#msg").innerHTML=`<p class="err">${esc(e.message)}</p>`;b.disabled=false}};
   $("#mkpo").onclick=async()=>{const b=$("#mkpo");b.disabled=true;$("#msg").innerHTML=`<p>Creating your pool…</p>`;
-    try{const r=await api({action:"create",type:"playoffs"},true);if(!r.ok)throw new Error(r.error);location.hash="#/created/"+r.code}
+    try{const r=await api({action:"create",type:"playoffs"},true);if(!r.ok)throw new Error(r.error);try{sessionStorage.setItem("nhlwl:admin:"+r.code,JSON.stringify(r.adminKey))}catch(e){}location.hash="#/created/"+r.code}
     catch(e){$("#msg").innerHTML=`<p class="err">${esc(e.message)}</p>`;b.disabled=false}}}
 
 function siteUrl(h){return location.href.split("#")[0]+h}
@@ -181,6 +182,9 @@ async function created(code){const url=siteUrl("#/enter");const direct=siteUrl("
   const closes=mo?`Entries close when the first game of ${esc(mn)} starts${P.status.deadline?` (${fmtD(P.status.deadline)})`:""}. The top-25 player list for this pool is now frozen.`:"Entries close when the first playoff game starts.";
   view(`<div class="card"><h2>Your pool is ready 🎉</h2><p>You're the admin of this ${what}. Send the Pool Code and the link below to everyone you'd like to invite.</p>
   <h3 style="margin-top:16px">Pool Code</h3><div class="copyrow"><span class="big" id="cd">${esc(code)}</span><button class="b" data-copy="${esc(code)}">Copy code</button></div>
+  ${(()=>{let k=null;try{k=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))}catch(e){}return k?`<div class="formula" style="border-left-color:#d7191f"><h3 style="margin:0 0 4px">🔑 Your private Admin Key</h3>
+    <div class="copyrow" style="margin:6px 0"><span class="big" style="font-size:30px;letter-spacing:.12em">${esc(k)}</span><button class="b" data-copy="${esc(k)}">Copy key</button></div>
+    <b>Keep this to yourself and save it now — it is shown only once and cannot be recovered.</b> With it you can open the <a href="#/admin/${esc(code)}">Pool admin</a> page to remove duplicate or unwanted entries. Don't send it to the people you invite.</div>`:""})()}
   <h3>"Enter a pool" page</h3><div class="copyrow"><input readonly value="${esc(url)}"><button class="b" data-copy="${esc(url)}">Copy link</button></div>
   <h3>Ready-to-paste invitation</h3><div class="copyrow"><input readonly id="inv" value="${esc(`You're invited to my free NHL ${mo?mn+" monthly":"playoff"} pool! Go to ${url} and enter Pool Code ${code}.`)}"><button class="b" data-copy-from="inv">Copy invitation</button></div>
   <p class="muted">Keep this code — you'll need it to check the pool's leaderboard. ${closes}</p>
@@ -288,9 +292,35 @@ function formMonthly(code,r){
     catch(e){$("#sum").innerHTML=`<span class="err">${esc(e.message)}</span>`;b.disabled=false}});
   refresh()}
 
-function confirmBox(html,yes){const m=document.createElement("div");m.className="modal";
-  m.innerHTML=`<div class="box">${html}<div class="row"><button class="b ghost" id="no">No, go back</button><button class="b red" id="yes">Yes, enter</button></div></div>`;
+function confirmBox(html,yes,yesLabel){const m=document.createElement("div");m.className="modal";
+  m.innerHTML=`<div class="box">${html}<div class="row"><button class="b ghost" id="no">No, go back</button><button class="b red" id="yes">${yesLabel||"Yes, enter"}</button></div></div>`;
   document.body.appendChild(m);m.querySelector("#no").onclick=()=>m.remove();m.querySelector("#yes").onclick=()=>{m.remove();yes()}}
+
+// ---------- pool admin ----------
+function admin(code){
+  let saved="";try{saved=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))||""}catch(e){}
+  view(`<div class="card"><h2>Pool Admin</h2><p>Enter your pool's 6-digit Pool Code and the private Admin Key you were given when you started the pool.</p>
+    <form id="af" style="margin-top:14px;display:grid;gap:10px;max-width:420px">
+      <input class="codein" id="code" inputmode="numeric" maxlength="6" placeholder="••••••" value="${esc(code||"")}" autocomplete="off">
+      <input class="search" id="key" placeholder="Admin Key, e.g. ABCDE-FGHJK" value="${esc(saved)}" autocomplete="off" style="width:100%;font-size:17px;letter-spacing:.08em">
+      <div><button class="b" type="submit">Open admin page →</button></div></form><div id="msg"></div></div>`);
+  const c=$("#code");c.oninput=()=>c.value=c.value.replace(/\D/g,"").slice(0,6);
+  $("#af").onsubmit=e=>{e.preventDefault();adminList(c.value,$("#key").value.trim())}
+  if(code&&saved)adminList(code,saved)}
+async function adminList(code,key){
+  $("#msg").innerHTML=`<p>Checking…</p>`;
+  let r;try{r=await api({action:"admin",code,key},true)}catch(e){r={ok:false,error:e.message}}
+  if(!r.ok){$("#msg").innerHTML=`<p class="err">${esc(r.error)}</p>`;return}
+  try{sessionStorage.setItem("nhlwl:admin:"+code,JSON.stringify(key))}catch(e){}
+  const what=r.pool.type==="monthly"?`${esc(r.pool.monthName)} monthly pool`:`${esc(r.pool.season)} playoff pool`;
+  view(`<div class="card"><h2>Pool Admin · ${esc(code)}</h2><p>${what} · ${r.entries.length} ${r.entries.length===1?"entry":"entries"} · ${r.status.state==="open"?"open for entries":"entries closed"}</p>
+    <p>Remove any entry you don't recognize, or extra entries from the same person. Each device can enter only once, but someone could still enter again from a different phone or computer. Removing an entry can't be undone.</p>
+    ${r.entries.length?`<table style="margin-top:10px"><tr><th class="l">Name</th><th>Entered</th><th></th></tr>${r.entries.map(e=>`<tr><td class="l"><b>${esc(e.name)}</b></td><td>${esc(new Date(e.entered).toLocaleString("en-CA",{timeZone:"America/Toronto",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td><button class="b red" data-rm="${esc(e.id)}" data-nm="${esc(e.name)}" style="padding:6px 12px">Remove</button></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
+    <div class="copyrow" style="margin-top:14px"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><button class="b ghost" id="rf">Refresh</button></div><div id="msg"></div></div>`);
+  $("#rf").onclick=()=>adminList(code,key);
+  app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>confirmBox(`<h3>Remove ${esc(b.dataset.nm)}?</h3><p>This entry will be deleted from the pool. This can't be undone.</p>`,async()=>{
+    const x=await api({action:"remove",code,key,id:b.dataset.rm},true).catch(e=>({ok:false,error:e.message}));
+    if(!x.ok){$("#msg").innerHTML=`<p class="err">${esc(x.error)}</p>`;return}adminList(code,key)},"Yes, remove"))}
 
 async function board(code){
   view(`<div class="card"><p>Loading the leaderboard…</p></div>`);

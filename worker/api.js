@@ -20,8 +20,27 @@ const TZ = 'America/Toronto';
 const json = (o, status = 200) => new Response(JSON.stringify(o), {
   status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
 });
+// Random device id kept in a cookie (no personal information) so one device can enter a pool only once.
+const DEV_COOKIE = 'pdev';
+function deviceOf(request) {
+  const m = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)pdev=([A-Za-z0-9]{16,40})/);
+  return m ? m[1] : null;
+}
+const randKey = (len, abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789') => [...crypto.getRandomValues(new Uint8Array(len))].map(b => abc[b % abc.length]).join('');
+async function sha(s) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); }
+const normKey = k => String(k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 export async function onRequest(ctx) {
+  const { request } = ctx;
+  let dev = deviceOf(request), fresh = false;
+  if (!dev) { dev = randKey(24, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'); fresh = true; }
+  ctx.device = dev;
+  const res = await handle(ctx);
+  if (fresh) res.headers.append('Set-Cookie', `${DEV_COOKIE}=${dev}; Path=/api; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`);
+  return res;
+}
+
+async function handle(ctx) {
   const { request, env } = ctx;
   try {
     if (!env.DB) return json({ ok: false, error: 'The pool database is not connected yet.' });
@@ -33,6 +52,8 @@ export async function onRequest(ctx) {
     if (p.action === 'create') return json(await createPool(ctx, p));
     if (p.action === 'pool') return json(await getPool(ctx, p));
     if (p.action === 'enter') return json(await addEntry(ctx, p));
+    if (p.action === 'admin') return json(await adminView(ctx, p));
+    if (p.action === 'remove') return json(await adminRemove(ctx, p));
     if (p.action === 'snapstatus') return json(await snapStatus(env, (await siteJSON(ctx, 'season.json')).season));
     if (p.action === 'snapnow') return json(await takeSnapshot(env));
     return json({ ok: false, error: 'Unknown request.' });
@@ -50,7 +71,9 @@ async function ensureTables(db) {
   ]);
   // monthly pools keep their month, N and frozen player list in "meta" (added after launch)
   const cols = await db.prepare('PRAGMA table_info(pools)').all();
-  if (!cols.results.some(c => c.name === 'meta')) { try { await db.prepare('ALTER TABLE pools ADD COLUMN meta TEXT').run(); } catch (e) {} }
+  for (const col of ['meta', 'admin_hash']) if (!cols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE pools ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
+  const ecols = await db.prepare('PRAGMA table_info(entries)').all();
+  if (!ecols.results.some(c => c.name === 'device')) { try { await db.prepare('ALTER TABLE entries ADD COLUMN device TEXT').run(); } catch (e) {} }
   tablesReady = true;
 }
 
@@ -145,11 +168,12 @@ async function createPool(ctx, p) {
     if (players.length < 25) return { ok: false, error: 'Player statistics are not available yet. Please try again later.' };
     meta = { month: nm.month, n: nm.n, deadline: nm.first, players, frozen: stats.updated || null };
   }
+  const adminKey = randKey(10);
   for (let i = 0; i < 30; i++) {
     const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
-    const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO pools (code, type, season, created, meta) VALUES (?, ?, ?, ?, ?)')
-      .bind(code, p.type, season, new Date().toISOString(), meta ? JSON.stringify(meta) : null).run();
-    if (r.meta && r.meta.changes === 1) return { ok: true, code, type: p.type, season, month: meta && meta.month, monthName: meta && monthName(meta.month), n: meta && meta.n };
+    const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO pools (code, type, season, created, meta, admin_hash) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(code, p.type, season, new Date().toISOString(), meta ? JSON.stringify(meta) : null, await sha(code + ':' + adminKey)).run();
+    if (r.meta && r.meta.changes === 1) return { ok: true, code, adminKey: adminKey.slice(0, 5) + '-' + adminKey.slice(5), type: p.type, season, month: meta && meta.month, monthName: meta && monthName(meta.month), n: meta && meta.n };
   }
   return { ok: false, error: 'Could not create a pool code. Please try again.' };
 }
@@ -157,7 +181,7 @@ async function createPool(ctx, p) {
 async function findPool(ctx, code) {
   const c = normCode(code);
   if (c.length !== 6) return null;
-  const row = await ctx.env.DB.prepare('SELECT code, type, season, created, meta FROM pools WHERE code = ?').bind(c).first();
+  const row = await ctx.env.DB.prepare('SELECT code, type, season, created, meta, admin_hash FROM pools WHERE code = ?').bind(c).first();
   if (row) { try { row.meta = row.meta ? JSON.parse(row.meta) : null; } catch (e) { row.meta = null; } }
   return row;
 }
@@ -258,8 +282,34 @@ async function addEntry(ctx, p) {
   const clean = {};
   for (const k in (monthly ? NEED_M : NEED)) clean[k] = p.picks[k].map(String);
   // The (code, name_key) primary key makes duplicate names impossible, even for simultaneous entries.
-  const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO entries (code, name, name_key, picks, entered) VALUES (?, ?, ?, ?, ?)')
-    .bind(pool.code, name, nameKey(name), JSON.stringify(clean), new Date().toISOString()).run();
+  const dup = await ctx.env.DB.prepare('SELECT 1 FROM entries WHERE code = ? AND device = ?').bind(pool.code, ctx.device).first();
+  if (dup) return { ok: false, error: 'This device has already entered this pool. Each device can enter a pool only once.' };
+  const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO entries (code, name, name_key, picks, entered, device) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(pool.code, name, nameKey(name), JSON.stringify(clean), new Date().toISOString(), ctx.device).run();
   if (!r.meta || r.meta.changes !== 1) return { ok: false, error: 'That name is already taken in this pool. Please choose another.' };
   return { ok: true, name };
+}
+
+// ---------- pool admin (needs the Admin Key shown once when the pool was started) ----------
+async function adminPool(ctx, p) {
+  const pool = await findPool(ctx, p.code);
+  if (!pool) return { err: 'No pool was found with that Pool Code.' };
+  if (!pool.admin_hash) return { err: 'This pool was started before admin keys existed, so it has no admin page.' };
+  if (await sha(pool.code + ':' + normKey(p.key)) !== pool.admin_hash) return { err: 'That Admin Key is not correct for this pool.' };
+  return { pool };
+}
+async function adminView(ctx, p) {
+  const { pool, err } = await adminPool(ctx, p);
+  if (err) return { ok: false, error: err };
+  const { results } = await ctx.env.DB.prepare('SELECT name, name_key, entered FROM entries WHERE code = ? ORDER BY entered').bind(pool.code).all();
+  const st = await statusFor(ctx, pool);
+  return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season, monthName: pool.meta && pool.meta.month ? monthName(pool.meta.month) : null }, status: st,
+    entries: results.map(r => ({ name: r.name, id: r.name_key, entered: r.entered })) };
+}
+async function adminRemove(ctx, p) {
+  const { pool, err } = await adminPool(ctx, p);
+  if (err) return { ok: false, error: err };
+  const r = await ctx.env.DB.prepare('DELETE FROM entries WHERE code = ? AND name_key = ?').bind(pool.code, String(p.id || '')).run();
+  if (!r.meta || r.meta.changes !== 1) return { ok: false, error: 'That entry was not found (it may already be removed).' };
+  return { ok: true };
 }
