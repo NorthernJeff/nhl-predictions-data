@@ -310,7 +310,7 @@ nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opac
 .lbt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
 .lbt th,.lbt td{padding:5px 6px;border-top:1px solid var(--line2);text-align:right;white-space:nowrap}
 .lbt th{color:var(--muted);font-weight:500;font-size:11px}
-.lbt .nm{text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:180px}.lbt .rk{color:var(--muted);width:22px}
+.lbt .nm{text-align:left;overflow:hidden;text-overflow:ellipsis;max-width:180px}.lbt .rk{color:var(--muted);width:30px;white-space:nowrap}
 .lbt tr:hover td{background:var(--soft)}
 .lbt .grp td{text-align:left;font-weight:700;font-size:12px;background:var(--soft);color:var(--ink);padding:6px}
 .lbt.st .nm{max-width:none}
@@ -892,7 +892,7 @@ function renderLeaders(){const el=document.getElementById("leaders");if(curTab!=
   const points=sk.slice().sort((a,b)=>b.pts-a.pts||(b.g||0)-(a.g||0)||a.gp-b.gp).slice(0,lbN);
   const gk=[];for(const tm in STATS.goalies)for(const g of STATS.goalies[tm])gk.push({n:g[0],tm,gp:g[1],sv:g[2],r:goalieGoals(g)});
   gk.sort((a,b)=>b.r-a.r);const L=league();
-  const rank=(arr,i,key)=>i>0&&arr[i-1][key]===arr[i][key]?"":i+1;
+  const rank=(arr,i,key)=>{let f=i;while(f>0&&arr[f-1][key]===arr[i][key])f--;const tie=f<i||(i+1<arr.length&&arr[i+1][key]===arr[i][key]);return(tie?"T":"")+(f+1)};
   const pl=(r)=>`<td class="nm">${esc(r.n)}</td><td>${mini(r.tm)}</td>`;
   const card=(title,sub,head,body)=>`<div class="lbc"><h3>${title}</h3><div class="lbs">${sub}</div><table class="lbt"><tr>${head}</tr>${body}</table></div>`;
   el.innerHTML=`<div class="lbwrap">
