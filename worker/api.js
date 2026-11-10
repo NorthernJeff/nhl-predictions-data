@@ -3,8 +3,18 @@
  * Storage: a Cloudflare D1 database bound to this Worker as "DB" (see wrangler.jsonc).
  * Every rule that matters is enforced here: entry deadline, unique names per pool,
  * exact pick counts, valid playoff players/teams, and no edits after entering.
+ *
+ * Pool types:
+ *   playoffs — 2 C, 2 LW, 2 RW, 4 D, 2 G, 5 teams from the 16 playoff teams.
+ *   monthly  — 10 skaters from a top-25 points list frozen when the pool is created, 2 G, 5 teams.
+ *              Covers the next calendar month that hasn't started; only each team's first N games of
+ *              that month count, N = fewest games any team plays that month (stored with the pool).
  */
+import { monthlyValues, snapStatus, takeSnapshot } from './snap.js';
 const NEED = { C: 2, LW: 2, RW: 2, D: 4, G: 2, T: 5 };
+const NEED_M = { S: 10, G: 2, T: 5 };
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const monthName = m => MONTHS[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4);
 const TZ = 'America/Toronto';
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), {
@@ -23,6 +33,8 @@ export async function onRequest(ctx) {
     if (p.action === 'create') return json(await createPool(ctx, p));
     if (p.action === 'pool') return json(await getPool(ctx, p));
     if (p.action === 'enter') return json(await addEntry(ctx, p));
+    if (p.action === 'snapstatus') return json(await snapStatus(env, (await siteJSON(ctx, 'season.json')).season));
+    if (p.action === 'snapnow') return json(await takeSnapshot(env));
     return json({ ok: false, error: 'Unknown request.' });
   } catch (err) {
     return json({ ok: false, error: String((err && err.message) || err) });
@@ -36,6 +48,9 @@ async function ensureTables(db) {
     db.prepare('CREATE TABLE IF NOT EXISTS pools (code TEXT PRIMARY KEY, type TEXT NOT NULL, season TEXT NOT NULL, created TEXT NOT NULL)'),
     db.prepare('CREATE TABLE IF NOT EXISTS entries (code TEXT NOT NULL, name TEXT NOT NULL, name_key TEXT NOT NULL, picks TEXT NOT NULL, entered TEXT NOT NULL, PRIMARY KEY (code, name_key))'),
   ]);
+  // monthly pools keep their month, N and frozen player list in "meta" (added after launch)
+  const cols = await db.prepare('PRAGMA table_info(pools)').all();
+  if (!cols.results.some(c => c.name === 'meta')) { try { await db.prepare('ALTER TABLE pools ADD COLUMN meta TEXT').run(); } catch (e) {} }
   tablesReady = true;
 }
 
@@ -85,14 +100,56 @@ async function entryStatus(ctx, season) {
   return { state: 'open', deadline: first, message: '' };
 }
 
+// Regular-season games by month: every played and scheduled game, with each team's game count.
+async function monthGames(ctx) {
+  const [g, s] = await Promise.all([siteJSON(ctx, 'games.json'), siteJSON(ctx, 'schedule.json')]);
+  const list = [];
+  for (const x of (g && g.games) || []) list.push({ d: x[0], t: null, a: x[1], h: x[3] });
+  const seen = new Set(list.map(x => x.d + x.a + x.h));
+  for (const x of (s && s.games) || []) if (!seen.has(x[0] + x[2] + x[3])) list.push({ d: x[0], t: x[1], a: x[2], h: x[3] });
+  return list;
+}
+// The month a new monthly pool covers: the earliest month whose first game hasn't started yet.
+async function nextMonth(ctx) {
+  const list = await monthGames(ctx), by = {};
+  for (const x of list) { const m = x.d.slice(0, 7); (by[m] = by[m] || []).push(x); }
+  const now = Date.now();
+  for (const m of Object.keys(by).sort()) {
+    const gs = by[m];
+    if (gs.some(x => x.t === null)) continue; // games already played in this month
+    let first = null; for (const x of gs) { const t = easternToUTC(x.d, x.t); if (first === null || t < first) first = t; }
+    if (first <= now) continue;
+    const cnt = {}; for (const x of gs) { cnt[x.a] = (cnt[x.a] || 0) + 1; cnt[x.h] = (cnt[x.h] || 0) + 1; }
+    const teams = Object.keys(cnt);
+    if (teams.length < 32) continue; // a month with only a few games (e.g. the end of September)
+    return { month: m, first, n: Math.min(...teams.map(t => cnt[t])) };
+  }
+  return null;
+}
+function topSkaters(stats, k) {
+  const sk = [];
+  for (const tm in (stats && stats.skaters) || {}) for (const x of stats.skaters[tm]) sk.push({ n: x[0], t: tm, pos: x[1], gp: x[2], pts: x[3], g: x[5] || 0 });
+  sk.sort((a, b) => b.pts - a.pts || b.g - a.g || a.gp - b.gp);
+  return sk.slice(0, k).map(x => [x.t, x.n, x.pos, x.pts, x.gp]);
+}
+
 async function createPool(ctx, p) {
-  if (p.type !== 'playoffs') return { ok: false, error: 'Only playoff pools are available right now.' };
+  if (p.type !== 'playoffs' && p.type !== 'monthly') return { ok: false, error: 'Unknown pool type.' };
   const season = (await siteJSON(ctx, 'season.json')).season;
+  let meta = null;
+  if (p.type === 'monthly') {
+    const nm = await nextMonth(ctx);
+    if (!nm) return { ok: false, error: 'There are no more monthly pools this regular season.' };
+    const stats = await siteJSON(ctx, 'stats.json');
+    const players = topSkaters(stats, 25);
+    if (players.length < 25) return { ok: false, error: 'Player statistics are not available yet. Please try again later.' };
+    meta = { month: nm.month, n: nm.n, deadline: nm.first, players, frozen: stats.updated || null };
+  }
   for (let i = 0; i < 30; i++) {
     const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
-    const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO pools (code, type, season, created) VALUES (?, ?, ?, ?)')
-      .bind(code, 'playoffs', season, new Date().toISOString()).run();
-    if (r.meta && r.meta.changes === 1) return { ok: true, code, type: 'playoffs', season };
+    const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO pools (code, type, season, created, meta) VALUES (?, ?, ?, ?, ?)')
+      .bind(code, p.type, season, new Date().toISOString(), meta ? JSON.stringify(meta) : null).run();
+    if (r.meta && r.meta.changes === 1) return { ok: true, code, type: p.type, season, month: meta && meta.month, monthName: meta && monthName(meta.month), n: meta && meta.n };
   }
   return { ok: false, error: 'Could not create a pool code. Please try again.' };
 }
@@ -100,13 +157,21 @@ async function createPool(ctx, p) {
 async function findPool(ctx, code) {
   const c = normCode(code);
   if (c.length !== 6) return null;
-  return ctx.env.DB.prepare('SELECT code, type, season, created FROM pools WHERE code = ?').bind(c).first();
+  const row = await ctx.env.DB.prepare('SELECT code, type, season, created, meta FROM pools WHERE code = ?').bind(c).first();
+  if (row) { try { row.meta = row.meta ? JSON.parse(row.meta) : null; } catch (e) { row.meta = null; } }
+  return row;
 }
+function monthlyStatus(pool) {
+  const m = pool.meta || {}, dl = m.deadline;
+  if (dl && Date.now() >= dl) return { state: 'closed', deadline: dl, message: 'Entries closed when the first game of ' + monthName(m.month) + ' started.' };
+  return { state: 'open', deadline: dl || null, message: '' };
+}
+const statusFor = (ctx, pool) => pool.type === 'monthly' ? monthlyStatus(pool) : entryStatus(ctx, pool.season);
 
 async function getPool(ctx, p) {
   const pool = await findPool(ctx, p.code);
   if (!pool) return { ok: false, error: 'No pool was found with that Pool Code.' };
-  const st = await entryStatus(ctx, pool.season);
+  const st = await statusFor(ctx, pool);
   const reveal = st.state === 'closed';
   const { results } = await ctx.env.DB.prepare('SELECT name, picks, entered FROM entries WHERE code = ? ORDER BY entered').bind(pool.code).all();
   const entries = results.map(r => {
@@ -114,7 +179,20 @@ async function getPool(ctx, p) {
     if (reveal) { try { e.picks = JSON.parse(r.picks); } catch (x) { e.picks = null; } }
     return e;
   });
-  return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season }, status: st, entries, picksVisible: reveal };
+  const info = { code: pool.code, type: pool.type, season: pool.season };
+  if (pool.type === 'monthly' && pool.meta) {
+    Object.assign(info, { month: pool.meta.month, monthName: monthName(pool.meta.month), n: pool.meta.n, players: pool.meta.players, frozen: pool.meta.frozen });
+    if (reveal) {
+      // games each team played before the month, then every pick's points/saves within its team's first N games
+      const g = await siteJSON(ctx, 'games.json'), k0 = {}, start = pool.meta.month + '-01';
+      for (const x of (g && g.games) || []) for (const t of [x[1], x[3]]) { k0[t] = k0[t] || 0; if (x[0] < start) k0[t]++; }
+      const kinds = { s: new Set(), g: new Set() };
+      for (const e of entries) if (e.picks) { (e.picks.S || []).forEach(id => kinds.s.add(id)); (e.picks.G || []).forEach(id => kinds.g.add(id)); }
+      try { info.values = await monthlyValues(ctx.env, pool.season, { s: [...kinds.s], g: [...kinds.g] }, k0, pool.meta.n); }
+      catch (e) { info.values = {}; info.valuesError = String(e.message || e); }
+    }
+  }
+  return { ok: true, pool: info, status: st, entries, picksVisible: reveal };
 }
 
 async function validPicks(ctx, picks, season) {
@@ -145,18 +223,40 @@ async function validPicks(ctx, picks, season) {
   return '';
 }
 
+async function validMonthly(ctx, picks, pool) {
+  if (!picks || typeof picks !== 'object') return 'Your picks are missing.';
+  const st = await siteJSON(ctx, 'stats.json');
+  const allowed = new Set(((pool.meta && pool.meta.players) || []).map(r => r[0] + '|' + r[1]));
+  const seen = new Set();
+  for (const k in NEED_M) {
+    const arr = picks[k];
+    if (!Array.isArray(arr) || arr.length !== NEED_M[k]) return 'Please pick exactly ' + NEED_M[k] + (k === 'S' ? ' skaters.' : k === 'G' ? ' goaltenders.' : ' teams.');
+    for (const raw of arr) {
+      const id = String(raw);
+      if (seen.has(id)) return 'You picked the same choice twice: ' + id.replace('|', ' ');
+      seen.add(id);
+      if (k === 'T') { if (!(st.teams && st.teams[id])) return 'Unknown team: ' + id; continue; }
+      const bar = id.indexOf('|'), tm = id.slice(0, bar), nm = id.slice(bar + 1);
+      if (k === 'S') { if (!allowed.has(id)) return nm + ' is not on this pool\'s top-25 list.'; continue; }
+      if (bar < 1 || !(st.goalies[tm] || []).some(r => r[0] === nm)) return 'Unknown goaltender: ' + nm;
+    }
+  }
+  return '';
+}
+
 async function addEntry(ctx, p) {
   const pool = await findPool(ctx, p.code);
   if (!pool) return { ok: false, error: 'No pool was found with that Pool Code.' };
-  const st = await entryStatus(ctx, pool.season);
+  const st = await statusFor(ctx, pool);
   if (st.state !== 'open') return { ok: false, error: st.message };
   const name = String(p.name || '').trim().replace(/\s+/g, ' ');
   if (name.length < 2 || name.length > 24) return { ok: false, error: 'Your display name must be 2 to 24 characters.' };
   if (/[<>]/.test(name)) return { ok: false, error: 'Please use only letters, numbers and simple punctuation in your name.' };
-  const bad = await validPicks(ctx, p.picks, pool.season);
+  const monthly = pool.type === 'monthly';
+  const bad = monthly ? await validMonthly(ctx, p.picks, pool) : await validPicks(ctx, p.picks, pool.season);
   if (bad) return { ok: false, error: bad };
   const clean = {};
-  for (const k in NEED) clean[k] = p.picks[k].map(String);
+  for (const k in (monthly ? NEED_M : NEED)) clean[k] = p.picks[k].map(String);
   // The (code, name_key) primary key makes duplicate names impossible, even for simultaneous entries.
   const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO entries (code, name, name_key, picks, entered) VALUES (?, ?, ?, ?, ?)')
     .bind(pool.code, name, nameKey(name), JSON.stringify(clean), new Date().toISOString()).run();

@@ -4,8 +4,8 @@
 <script>/* The old GitHub Pages address forwards to the main site on puck-off.com (same page). */if(/github\.io$/i.test(location.hostname)){location.replace("https://puck-off.com"+location.pathname.replace(/^\/nhl-predictions-data/,"").replace(/(index)?\.html$/,"")+location.search+location.hash)}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hockey Pools – Free NHL Playoff Pool | Puck-Off</title>
-<meta name="description" content="Start, join or check a free NHL playoff hockey pool. Share a 6-digit code, pick 12 players and 5 teams, and the leaderboard updates itself.">
+<title>Hockey Pools – Free NHL Monthly &amp; Playoff Pools | Puck-Off</title>
+<meta name="description" content="Start, join or check a free NHL hockey pool: monthly pools during the regular season and a Stanley Cup playoff pool. Share a 6-digit code and the leaderboard updates itself.">
 <link rel="canonical" href="https://puck-off.com/pools">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -92,7 +92,9 @@ const TEAMS={ANA:["Anaheim Ducks","#f47a38"],BOS:["Boston Bruins","#c69214"],BUF
 const bdg=t=>`<span class="badge" style="background:${(TEAMS[t]||["","#555"])[1]}">${esc(t)}</span>`;
 const tname=t=>(TEAMS[t]||[t])[0];
 const NEED={C:2,LW:2,RW:2,D:4,G:2,T:5};
-const GNAME={C:"Centres",LW:"Left Wings",RW:"Right Wings",D:"Defence",G:"Goaltenders",T:"Teams"};
+const GNAME={C:"Centres",LW:"Left Wings",RW:"Right Wings",D:"Defence",G:"Goaltenders",T:"Teams",S:"Skaters (top 25)"};
+const NEED_M={S:10,G:2,T:5};
+const formulaM=(n,mn)=>`<div class="formula"><b>Score</b> = (total points of your 10 skaters) + (total saves of your 2 goaltenders ÷ 20) + (total wins of your 5 teams). Only <b>each team's first ${n} games of ${esc(mn)}</b> count, so every player and team gets the same number of games. Highest score wins.</div>`;
 const FORMULA=`<div class="formula"><b>Score</b> = (total points of your 10 forwards and defence) + (total saves of your 2 goaltenders ÷ 20) + (total playoff wins of your 5 teams). Highest score wins.</div>`;
 const fmtD=ms=>new Date(ms).toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
 function posGroups(pos){const g=new Set();String(pos||"").toUpperCase().split(/[^A-Z]+/).forEach(p=>{if(p==="C")g.add("C");else if(p==="LW")g.add("LW");else if(p==="RW")g.add("RW");else if(p==="W"){g.add("LW");g.add("RW")}else if(p==="F"){g.add("C");g.add("LW");g.add("RW")}else if(p==="D")g.add("D")});return[...g]}
@@ -113,6 +115,21 @@ async function api(params,post){
 // playoff data for a pool's season (current season from playoffs.json, older seasons from the archive)
 async function poFor(season){if(PO&&PO.season===season)return PO;if(!(season in ARCH)){const a=await J("archive/"+season+".json");ARCH[season]=a&&a.playoffs?a.playoffs:null}return ARCH[season]}
 function playoffTeams(po){if(!po||!po.seeds)return[];return["W","E"].flatMap(c=>po.seeds[c].flat())}
+
+// ---------- monthly scoring ----------
+// Points and saves within each team's first N games of the month come from the pool service (pool.values);
+// team wins are counted here from games.json.
+async function monthlyScorer(pool){
+  if(!GAMES)GAMES=await J("games.json");if(!SCHED)SCHED=await J("schedule.json");
+  const M=pool.month,N=pool.n,V=pool.values||{};const played=(GAMES&&GAMES.games)||[],wins={};
+  for(const t in TEAMS){const gs=played.filter(g=>g[0].slice(0,7)===M&&(g[1]===t||g[3]===t)).slice(0,N);
+    wins[t]=gs.filter(g=>(g[3]===t&&g[4]>g[2])||(g[1]===t&&g[2]>g[4])).length}
+  return picks=>{const d={sk:0,sv:0,tw:0,items:{}};
+    for(const id of picks.S||[]){const v=V[id]||0;d.items[id]=v;d.sk+=v}
+    for(const id of picks.G||[]){const v=V[id]||0;d.items[id]=v;d.sv+=v}
+    for(const t of picks.T||[]){const v=wins[t]||0;d.items[t]=v;d.tw+=v}
+    d.total=Math.round((d.sk+d.sv/20+d.tw)*100)/100;return d}}
+let GAMES=null,SCHED=null;
 
 // ---------- scoring ----------
 function scorer(po){
@@ -146,19 +163,27 @@ const noApi=()=>CFG&&CFG.api?"":`<div class="card"><p class="err">Pools are almo
 function start(){const reg=SEASON.season||"";view(`<div class="card"><h2>Start a Pool</h2><p>Choose the kind of pool. You'll get a Pool Code to send to the people you invite.</p>
   <div class="choices">
     <div class="choice locked" title="Coming in a future season"><b>🔒 Regular Season</b><span>Coming in a future season.</span></div>
+    <button class="choice gold" id="mkmo"><b>Monthly</b><span>Next month's pool: pick 10 of the top 25 scorers, 2 goalies and 5 teams.</span></button>
     <button class="choice gold" id="mkpo"><b>Playoffs</b><span>${esc(reg)} Stanley Cup Playoffs pool.</span></button>
   </div><div id="msg"></div></div>`);
+  $("#mkmo").onclick=async()=>{const b=$("#mkmo");b.disabled=true;$("#msg").innerHTML=`<p>Creating your monthly pool…</p>`;
+    try{const r=await api({action:"create",type:"monthly"},true);if(!r.ok)throw new Error(r.error);location.hash="#/created/"+r.code}
+    catch(e){$("#msg").innerHTML=`<p class="err">${esc(e.message)}</p>`;b.disabled=false}};
   $("#mkpo").onclick=async()=>{const b=$("#mkpo");b.disabled=true;$("#msg").innerHTML=`<p>Creating your pool…</p>`;
     try{const r=await api({action:"create",type:"playoffs"},true);if(!r.ok)throw new Error(r.error);location.hash="#/created/"+r.code}
     catch(e){$("#msg").innerHTML=`<p class="err">${esc(e.message)}</p>`;b.disabled=false}}}
 
 function siteUrl(h){return location.href.split("#")[0]+h}
-function created(code){const url=siteUrl("#/enter");const direct=siteUrl("#/enter/"+code);
-  view(`<div class="card"><h2>Your pool is ready 🎉</h2><p>You're the admin of this ${esc(SEASON.season||"")} playoff pool. Send the Pool Code and the link below to everyone you'd like to invite.</p>
+async function created(code){const url=siteUrl("#/enter");const direct=siteUrl("#/enter/"+code);
+  let P=null;try{const r=await api({action:"pool",code});if(r.ok)P=r}catch(e){}
+  const mo=P&&P.pool.type==="monthly",mn=mo?P.pool.monthName:"";
+  const what=mo?`${esc(mn)} monthly pool`:`${esc(SEASON.season||"")} playoff pool`;
+  const closes=mo?`Entries close when the first game of ${esc(mn)} starts${P.status.deadline?` (${fmtD(P.status.deadline)})`:""}. The top-25 player list for this pool is now frozen.`:"Entries close when the first playoff game starts.";
+  view(`<div class="card"><h2>Your pool is ready 🎉</h2><p>You're the admin of this ${what}. Send the Pool Code and the link below to everyone you'd like to invite.</p>
   <h3 style="margin-top:16px">Pool Code</h3><div class="copyrow"><span class="big" id="cd">${esc(code)}</span><button class="b" data-copy="${esc(code)}">Copy code</button></div>
   <h3>"Enter a pool" page</h3><div class="copyrow"><input readonly value="${esc(url)}"><button class="b" data-copy="${esc(url)}">Copy link</button></div>
-  <h3>Ready-to-paste invitation</h3><div class="copyrow"><input readonly id="inv" value="${esc(`You're invited to my free NHL playoff pool! Go to ${url} and enter Pool Code ${code}.`)}"><button class="b" data-copy-from="inv">Copy invitation</button></div>
-  <p class="muted">Keep this code — you'll need it to check the pool's leaderboard. Entries close when the first playoff game starts.</p>
+  <h3>Ready-to-paste invitation</h3><div class="copyrow"><input readonly id="inv" value="${esc(`You're invited to my free NHL ${mo?mn+" monthly":"playoff"} pool! Go to ${url} and enter Pool Code ${code}.`)}"><button class="b" data-copy-from="inv">Copy invitation</button></div>
+  <p class="muted">Keep this code — you'll need it to check the pool's leaderboard. ${closes}</p>
   <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><a class="b ghost" href="#/form/${esc(code)}" style="text-decoration:none">Enter your own picks</a></div></div>`);
   bindCopy()}
 function bindCopy(){app.querySelectorAll("[data-copy],[data-copy-from]").forEach(b=>b.onclick=async()=>{const t=b.dataset.copy||document.getElementById(b.dataset.copyFrom).value;
@@ -177,6 +202,7 @@ async function form(code){
   view(`<div class="card"><p>Loading the pool…</p></div>`);
   let r;try{r=await api({action:"pool",code})}catch(e){return view(`<div class="card"><p class="err">${esc(e.message)}</p></div>`)}
   if(!r.ok)return view(`<div class="card"><p class="err">${esc(r.error)}</p><a class="b ghost" href="#/enter" style="text-decoration:none">Try another code</a></div>`);
+  if(r.pool.type==="monthly")return formMonthly(code,r);
   const st=r.status,season=r.pool.season;
   if(st.state!=="open")return view(`<div class="card"><h2>Pool ${esc(code)} · ${esc(season)} Playoffs</h2><p>${esc(st.message)}</p>${FORMULA}
     <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a></div></div>`);
@@ -223,6 +249,45 @@ async function form(code){
     catch(e){$("#sum").innerHTML=`<span class="err">${esc(e.message)}</span>`;b.disabled=false}});
   refresh()}
 
+function formMonthly(code,r){
+  const st=r.status,P=r.pool,mn=P.monthName,F=formulaM(P.n,mn);
+  if(st.state!=="open")return view(`<div class="card"><h2>Pool ${esc(code)} · ${esc(mn)}</h2><p>${esc(st.message)}</p>${F}
+    <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a></div></div>`);
+  const taken=new Set(r.entries.map(e=>e.name.trim().replace(/\s+/g," ").toLowerCase()));
+  const sk=(P.players||[]).map(x=>({id:x[0]+"|"+x[1],n:x[1],t:x[0],pos:x[2],pts:x[3],gp:x[4]})).sort(byLast);
+  const gk=[];for(const t in(STATS.goalies||{}))for(const g of STATS.goalies[t])gk.push({id:t+"|"+g[0],n:g[0],t,gp:g[1],sv:g[2]});gk.sort(byLast);
+  const tlist=Object.keys(TEAMS).sort((a,b)=>tname(a).localeCompare(tname(b)));
+  const sel={S:[],G:[],T:[]};
+  const row=(g,p)=>`<label data-g="${g}" data-id="${esc(p.id)}" data-q="${esc((p.n+" "+p.t+" "+tname(p.t)).toLowerCase())}"><input type="checkbox">${bdg(p.t)} <span>${esc(p.n)}</span><span class="s">${g==="G"?`${p.gp} GP · ${(+p.sv).toFixed(3).replace(/^0/,"")}`:`${esc(p.pos)} · ${p.pts} pts`}</span></label>`;
+  const grp=(g,body,tall)=>`<div class="grp"><h4>${GNAME[g]} <span class="n" id="n_${g}">0 / ${NEED_M[g]}</span></h4><div class="lst" style="max-height:${tall?"none":"820px"}">${body}</div></div>`;
+  view(`<div class="card"><h2>Entry Form · Pool ${esc(code)}</h2><p>${esc(mn)} monthly pool. Entries close ${st.deadline?`<b>${fmtD(st.deadline)}</b> (when the first game of ${esc(mn)} starts)`:`when the first game of ${esc(mn)} starts`}.</p>${F}
+    <div class="namebox" style="margin-top:14px"><h3>Your display name</h3><input id="nm" maxlength="24" placeholder="e.g. PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name.</span><div id="nmmsg"></div></div>
+    <h3 style="margin-top:18px">Your picks</h3><p>Choose 10 skaters from the top 25 points leaders (any positions), 2 goaltenders and 5 teams. The top-25 list was frozen when this pool was created${P.frozen?` (points as of ${esc(P.frozen)})`:""}, so it's the same for everyone. Players are sorted by last name.</p>
+    <input class="search" id="q" placeholder="Search players or teams…">
+    <div class="picker">${grp("S",sk.map(p=>row("S",p)).join(""),true)}${grp("G",gk.map(p=>row("G",p)).join(""))}${grp("T",tlist.map(t=>`<label data-g="T" data-id="${t}" data-q="${esc((t+" "+tname(t)).toLowerCase())}"><input type="checkbox">${bdg(t)} <span>${esc(tname(t))}</span></label>`).join(""))}</div>
+    <div class="sticky"><span class="sum" id="sum"></span><button class="b red" id="go" disabled>Enter</button></div></div>`);
+  function refresh(){
+    app.querySelectorAll("label[data-g]").forEach(l=>{const g=l.dataset.g,id=l.dataset.id,cb=l.querySelector("input"),on=sel[g].includes(id);cb.checked=on;
+      const off=!on&&sel[g].length>=NEED_M[g];cb.disabled=off;l.classList.toggle("off",off)});
+    let done=true;for(const g in NEED_M){const n=sel[g].length,el=$("#n_"+g);el.textContent=`${n} / ${NEED_M[g]}`;el.classList.toggle("done",n===NEED_M[g]);if(n!==NEED_M[g])done=false}
+    const nm=$("#nm").value.trim().replace(/\s+/g," ");let nmOk=nm.length>=2&&!/[<>]/.test(nm);
+    if(nm&&taken.has(nm.toLowerCase())){nmOk=false;$("#nmmsg").innerHTML=`<p class="err">That name is already taken in this pool.</p>`}else $("#nmmsg").innerHTML="";
+    const lbl={S:"skaters",G:"goaltenders",T:"teams"};const left=Object.keys(NEED_M).filter(g=>sel[g].length<NEED_M[g]).map(g=>`${NEED_M[g]-sel[g].length} ${lbl[g]}`);
+    $("#sum").textContent=!nmOk?"Enter a display name (2–24 characters) that nobody in this pool is using.":left.length?"Still to pick: "+left.join(", ")+".":"All set — press Enter to submit.";
+    $("#go").disabled=!(done&&nmOk)}
+  app.querySelectorAll("label[data-g]").forEach(l=>l.querySelector("input").onchange=e=>{const g=l.dataset.g,id=l.dataset.id;
+    if(e.target.checked){if(sel[g].length<NEED_M[g])sel[g].push(id)}else sel[g]=sel[g].filter(x=>x!==id);refresh()});
+  $("#nm").oninput=refresh;
+  $("#q").oninput=()=>{const q=$("#q").value.trim().toLowerCase();app.querySelectorAll("label[data-g]").forEach(l=>l.style.display=!q||l.dataset.q.includes(q)?"":"none")};
+  $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p>`,async()=>{
+    const b=$("#go");b.disabled=true;$("#sum").textContent="Sending your entry…";
+    try{const name=$("#nm").value.trim().replace(/\s+/g," ");const res=await api({action:"enter",code,name,picks:sel},true);
+      if(!res.ok)throw new Error(res.error);
+      try{sessionStorage.setItem("nhlwl:poolme:"+code,JSON.stringify(res.name))}catch(e){}
+      location.hash="#/board/"+code}
+    catch(e){$("#sum").innerHTML=`<span class="err">${esc(e.message)}</span>`;b.disabled=false}});
+  refresh()}
+
 function confirmBox(html,yes){const m=document.createElement("div");m.className="modal";
   m.innerHTML=`<div class="box">${html}<div class="row"><button class="b ghost" id="no">No, go back</button><button class="b red" id="yes">Yes, enter</button></div></div>`;
   document.body.appendChild(m);m.querySelector("#no").onclick=()=>m.remove();m.querySelector("#yes").onclick=()=>{m.remove();yes()}}
@@ -231,24 +296,27 @@ async function board(code){
   view(`<div class="card"><p>Loading the leaderboard…</p></div>`);
   let r;try{r=await api({action:"pool",code})}catch(e){return view(`<div class="card"><p class="err">${esc(e.message)}</p></div>`)}
   if(!r.ok)return view(`<div class="card"><p class="err">${esc(r.error)}</p><a class="b ghost" href="#/rank" style="text-decoration:none">Try another code</a></div>`);
-  const season=r.pool.season,po=await poFor(season),score=scorer(po);let me=null;try{me=JSON.parse(sessionStorage.getItem("nhlwl:poolme:"+code))}catch(e){}
+  const mo=r.pool.type==="monthly",mn=mo?r.pool.monthName:"";
+  const season=r.pool.season,po=mo?null:await poFor(season),score=mo?await monthlyScorer(r.pool):scorer(po);let me=null;try{me=JSON.parse(sessionStorage.getItem("nhlwl:poolme:"+code))}catch(e){}
   const rows=r.entries.map(e=>({e,s:e.picks?score(e.picks):null}));
   if(r.picksVisible)rows.sort((a,b)=>b.s.total-a.s.total||a.e.name.localeCompare(b.e.name));else rows.sort((a,b)=>a.e.name.localeCompare(b.e.name));
   let rk=0,prev=null;rows.forEach((x,i)=>{const t=x.s?x.s.total:null;if(t!==prev){rk=i+1;prev=t}x.rk=rk});
-  const st=r.status;const head=st.state==="open"?`<p><span class="pill">Open for entries</span> Entries close ${st.deadline?fmtD(st.deadline):"when the first playoff game starts"}. Everyone's picks are revealed once entries close.</p>`
+  const st=r.status;const head=mo?(st.state==="open"?`<p><span class="pill">Open for entries</span> Entries close ${st.deadline?fmtD(st.deadline):`when the first game of ${esc(mn)} starts`}. Everyone's picks are revealed once entries close.</p>`
+      :`<p><span class="pill">Entries closed</span> Scores update automatically through each team's first ${r.pool.n} games of ${esc(mn)}.</p>`)
+    :st.state==="open"?`<p><span class="pill">Open for entries</span> Entries close ${st.deadline?fmtD(st.deadline):"when the first playoff game starts"}. Everyone's picks are revealed once entries close.</p>`
     :st.state==="notyet"?`<p><span class="pill">Waiting for the playoffs</span> ${esc(st.message)}</p>`:`<p><span class="pill">Entries closed</span> Scores update automatically as playoff games are played${po&&po.statsUpdated?` (player stats as of ${esc(po.statsUpdated)})`:""}.</p>`;
   const tbl=rows.length?`<table><tr><th>#</th><th class="l">Name</th>${r.picksVisible?"<th>Skater pts</th><th>Saves ÷ 20</th><th>Team wins</th><th>Score</th>":"<th>Entered</th>"}</tr>
     ${rows.map((x,i)=>`<tr class="${me&&me===x.e.name?"me":""}"><td>${r.picksVisible?x.rk:i+1}</td><td class="l">${r.picksVisible?`<button class="nm" data-i="${i}">${esc(x.e.name)}</button>`:esc(x.e.name)}${me&&me===x.e.name?" <span class=pill>you</span>":""}</td>
       ${r.picksVisible?`<td>${x.s.sk}</td><td>${(x.s.sv/20).toFixed(2)}</td><td>${x.s.tw}</td><td><b>${x.s.total.toFixed(2)}</b></td>`:`<td>${x.e.entered?esc(new Date(x.e.entered).toLocaleDateString("en-CA",{month:"short",day:"numeric"})):""}</td>`}</tr>
       <tr id="pk${i}" hidden><td colspan="6" class="l"></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`;
-  view(`<div class="card"><h2>Pool Leaderboard · ${esc(code)}</h2><p>${esc(season)} Stanley Cup Playoffs · ${rows.length} ${rows.length===1?"entry":"entries"}</p>${head}${FORMULA}
+  view(`<div class="card"><h2>Pool Leaderboard · ${esc(code)}</h2><p>${mo?`${esc(mn)} monthly pool`:`${esc(season)} Stanley Cup Playoffs`} · ${rows.length} ${rows.length===1?"entry":"entries"}</p>${head}${mo?formulaM(r.pool.n,mn):FORMULA}
     ${r.picksVisible?`<p class="muted">Click a name to see that entry's picks.</p>`:""}${tbl}
     <div class="copyrow" style="margin-top:14px">${st.state==="open"?`<a class="b" href="#/form/${esc(code)}" style="text-decoration:none">Enter this pool</a>`:""}<button class="b ghost" id="rf">Refresh</button></div></div>`);
   $("#rf").onclick=()=>board(code);
   app.querySelectorAll(".nm").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,tr=$("#pk"+i);if(!tr.hidden){tr.hidden=true;return}
     const x=rows[i],P=x.e.picks,S=x.s;const nmOf=id=>id.slice(id.indexOf("|")+1),tmOf=id=>id.slice(0,id.indexOf("|"));
     const pg=(g,unit)=>`<div class="pg"><b>${GNAME[g]}</b>${(P[g]||[]).map(id=>`<div><span>${g==="T"?bdg(id)+" "+esc(tname(id)):bdg(tmOf(id))+" "+esc(nmOf(id))}</span><span>${S.items[id]||0} ${unit}</span></div>`).join("")}</div>`;
-    tr.firstElementChild.innerHTML=`<div class="picks">${pg("C","pts")}${pg("LW","pts")}${pg("RW","pts")}${pg("D","pts")}${pg("G","saves")}${pg("T","wins")}</div>`;tr.hidden=false})}
+    tr.firstElementChild.innerHTML=mo?`<div class="picks">${pg("S","pts")}${pg("G","saves")}${pg("T","wins")}</div>`:`<div class="picks">${pg("C","pts")}${pg("LW","pts")}${pg("RW","pts")}${pg("D","pts")}${pg("G","saves")}${pg("T","wins")}</div>`;tr.hidden=false})}
 </script>
 </body>
 </html>

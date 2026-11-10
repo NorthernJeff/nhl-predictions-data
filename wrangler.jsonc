@@ -13,6 +13,7 @@
     { "pattern": "puck-off.com", "custom_domain": true },
     { "pattern": "www.puck-off.com", "custom_domain": true }
   ],
+  "triggers": { "crons": ["23 * * * *"] },
   "workers_dev": true,
   // Hockey-pool database. Created automatically on first deploy.
   "d1_databases": [

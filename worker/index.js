@@ -1,6 +1,7 @@
 // Cloudflare Worker: serves the website's files, the search-engine pages and the hockey-pool requests at /api.
 import { onRequest } from './api.js';
 import { renderPredictions, sitemap, SITE } from './seo.js';
+import { takeSnapshot } from './snap.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -22,5 +23,9 @@ export default {
       return new Response(request.method === 'HEAD' ? null : html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=600' } });
     }
     return env.ASSETS.fetch(request);
+  },
+  // hourly: stat snapshot for monthly pools
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(takeSnapshot(env).then(r => console.log('snapshot', JSON.stringify(r))).catch(e => console.log('snapshot failed', String(e))));
   },
 };
