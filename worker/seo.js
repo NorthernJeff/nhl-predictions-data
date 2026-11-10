@@ -155,7 +155,7 @@ export async function renderPredictions(env, origin) {
   ];
 
   const body = `
-<header class="top"><a class="brand" href="/">🏒 ${BRAND}</a><nav><a href="/">Open the app</a><a href="/nhl-playoff-pool">Playoff pool</a></nav></header>
+<header class="top"><a class="brandlogo" href="/" title="Puck-Off.com home"><img src="/logo.png" alt="" width="30" height="30"><span>Puck-Off.com</span></a><nav><a href="/">Open the app</a><a href="/nhl-playoff-pool">Playoff pool</a></nav></header>
 <main>
 <p class="crumb"><a href="/">${BRAND}</a> › NHL Predictions Today</p>
 <h1>NHL Predictions Today</h1>
@@ -212,6 +212,7 @@ export function page({ title, desc, path, ld, body }) {
 <meta name="twitter:image" content="${SITE}/og-image.png">
 ${(ld || []).map(o => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`).join('\n')}
 <style>
+@font-face{font-family:"Graduate";src:url(/graduate.woff2) format("woff2");font-display:swap}.brandlogo{display:flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}.brandlogo img{width:30px;height:30px;display:block}.brandlogo span{font-family:"Graduate",Georgia,serif;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)!important}
 :root{--bg:#f7f8fa;--card:#ffffff;--soft:#eef1f5;--line:#e3e6eb;--ink:#1c2230;--ink2:#4b5466;--muted:#7a8496;--acc:#2f6fed;--ok:#2b8a3e;--bad:#d7191f;--gold:#e9bd3f;color-scheme:light}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 a{color:var(--acc)}.top{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:8px}

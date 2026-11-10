@@ -26,6 +26,7 @@
 body.dark{--bg:#11151b;--card:#1d232c;--line:#2e3642;--ink:#e8ecf2;--ink2:#b5bdc9;--muted:#7f8a99;--acc:#6f9bff;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+@font-face{font-family:"Graduate";src:url(/graduate.woff2) format("woff2");font-display:swap}.brandlogo{display:flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}.brandlogo img{width:30px;height:30px;display:block}.brandlogo span{font-family:"Graduate",Georgia,serif;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)!important}
 .top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line)}
 .top a.back{color:var(--ink);text-decoration:none;font-weight:700;padding:7px 14px;border-radius:8px;background:#ffd43b;color:#1c2230}
 .top .sp{flex:1}
@@ -49,7 +50,7 @@ footer{text-align:center;color:var(--muted);font-size:12.5px;margin-top:22px}
 </style>
 </head>
 <body>
-<div class="top"><a class="back" href="index.html">← Back to the app</a><span class="sp"></span><button id="modebtn">☀ Light</button></div>
+<div class="top"><a class="brandlogo" href="/" title="Puck-Off.com home"><img src="/logo.png" alt="" width="30" height="30"><span>Puck-Off.com</span></a><a class="back" href="index.html">← Back to the app</a><span class="sp"></span><button id="modebtn">☀ Light</button></div>
 <main><div class="card">
 <h1>Legal Disclaimer</h1>
 <p class="eff">NHL Win/Loss Lines · Effective November 8, 2026</p>

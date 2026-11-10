@@ -64,6 +64,7 @@ nav.tabs a .cnt{font-weight:400;color:var(--muted);margin-left:5px;font-size:12p
 .nomsg{margin:auto;text-align:center;color:var(--ink2);max-width:380px;line-height:1.5}
 .nomsg b{display:block;color:var(--ink);font-size:15px;margin-bottom:6px}
 header{display:flex;align-items:center;gap:16px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+@font-face{font-family:"Graduate";src:url(/graduate.woff2) format("woff2");font-display:swap}.brandlogo{display:flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}.brandlogo img{width:30px;height:30px;display:block}.brandlogo span{font-family:"Graduate",Georgia,serif;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)!important}.brandsep{color:var(--muted);margin:0 -8px;font-weight:700}@media(max-width:640px){.brandsep{display:none}}
 header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
 header .sub{color:var(--ink2);font-size:12px}
 .legend{display:flex;gap:12px;align-items:center;color:var(--ink2);font-size:12px;margin-left:auto}
@@ -321,7 +322,7 @@ footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}footer a.flin
 <body>
 <div id="app">
 <header>
-  <h1 id="ttl">NHL 2026-27 Regular Season · Win/Loss Lines</h1>
+  <a class="brandlogo" href="/" title="Puck-Off.com home"><img src="/logo.png" alt="" width="30" height="30"><span>Puck-Off.com</span></a><span class="brandsep" aria-hidden="true">·</span><h1 id="ttl">NHL 2026-27 Regular Season · Win/Loss Lines</h1>
   <span class="sub" id="upd">Loading…</span>
   <div class="legend">
     <span class="lg">Win ↗ +1</span><span class="lg">Loss ↘ −1</span><span class="lg">Tie → 0</span>
