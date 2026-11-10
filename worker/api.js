@@ -54,6 +54,7 @@ async function handle(ctx) {
     if (p.action === 'enter') return json(await addEntry(ctx, p));
     if (p.action === 'admin') return json(await adminView(ctx, p));
     if (p.action === 'remove') return json(await adminRemove(ctx, p));
+    if (p.action === 'setnote') return json(await adminNote(ctx, p));
     if (p.action === 'snapstatus') return json(await snapStatus(env, (await siteJSON(ctx, 'season.json')).season));
     if (p.action === 'snapnow') return json(await takeSnapshot(env));
     return json({ ok: false, error: 'Unknown request.' });
@@ -71,7 +72,7 @@ async function ensureTables(db) {
   ]);
   // monthly pools keep their month, N and frozen player list in "meta" (added after launch)
   const cols = await db.prepare('PRAGMA table_info(pools)').all();
-  for (const col of ['meta', 'admin_hash']) if (!cols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE pools ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
+  for (const col of ['meta', 'admin_hash', 'note']) if (!cols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE pools ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
   const ecols = await db.prepare('PRAGMA table_info(entries)').all();
   if (!ecols.results.some(c => c.name === 'device')) { try { await db.prepare('ALTER TABLE entries ADD COLUMN device TEXT').run(); } catch (e) {} }
   tablesReady = true;
@@ -181,7 +182,7 @@ async function createPool(ctx, p) {
 async function findPool(ctx, code) {
   const c = normCode(code);
   if (c.length !== 6) return null;
-  const row = await ctx.env.DB.prepare('SELECT code, type, season, created, meta, admin_hash FROM pools WHERE code = ?').bind(c).first();
+  const row = await ctx.env.DB.prepare('SELECT code, type, season, created, meta, admin_hash, note FROM pools WHERE code = ?').bind(c).first();
   if (row) { try { row.meta = row.meta ? JSON.parse(row.meta) : null; } catch (e) { row.meta = null; } }
   return row;
 }
@@ -203,7 +204,7 @@ async function getPool(ctx, p) {
     if (reveal) { try { e.picks = JSON.parse(r.picks); } catch (x) { e.picks = null; } }
     return e;
   });
-  const info = { code: pool.code, type: pool.type, season: pool.season };
+  const info = { code: pool.code, type: pool.type, season: pool.season, note: pool.note || '' };
   if (pool.type === 'monthly' && pool.meta) {
     Object.assign(info, { month: pool.meta.month, monthName: monthName(pool.meta.month), n: pool.meta.n, players: pool.meta.players, frozen: pool.meta.frozen });
     if (reveal) {
@@ -303,7 +304,7 @@ async function adminView(ctx, p) {
   if (err) return { ok: false, error: err };
   const { results } = await ctx.env.DB.prepare('SELECT name, name_key, entered FROM entries WHERE code = ? ORDER BY entered').bind(pool.code).all();
   const st = await statusFor(ctx, pool);
-  return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season, monthName: pool.meta && pool.meta.month ? monthName(pool.meta.month) : null }, status: st,
+  return { ok: true, pool: { code: pool.code, type: pool.type, season: pool.season, note: pool.note || '', monthName: pool.meta && pool.meta.month ? monthName(pool.meta.month) : null }, status: st,
     entries: results.map(r => ({ name: r.name, id: r.name_key, entered: r.entered })) };
 }
 async function adminRemove(ctx, p) {
@@ -312,4 +313,11 @@ async function adminRemove(ctx, p) {
   const r = await ctx.env.DB.prepare('DELETE FROM entries WHERE code = ? AND name_key = ?').bind(pool.code, String(p.id || '')).run();
   if (!r.meta || r.meta.changes !== 1) return { ok: false, error: 'That entry was not found (it may already be removed).' };
   return { ok: true };
+}
+async function adminNote(ctx, p) {
+  const { pool, err } = await adminPool(ctx, p);
+  if (err) return { ok: false, error: err };
+  const note = String(p.note || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 140);
+  await ctx.env.DB.prepare('UPDATE pools SET note = ? WHERE code = ?').bind(note || null, pool.code).run();
+  return { ok: true, note };
 }

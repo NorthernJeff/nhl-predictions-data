@@ -49,6 +49,7 @@ p{color:var(--ink2);margin:6px 0}
 .formula{background:var(--soft);border-left:4px solid #e9bd3f;border-radius:8px;padding:10px 14px;margin:10px 0;font-size:14px}
 .formula b{color:var(--ink)}
 .namebox input{font:inherit;font-size:17px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(360px,100%)}
+.adminnote{background:#fff4c2;color:#3a2a00;border:1px solid #e9bd3f;border-radius:8px;padding:8px 12px;margin:4px 0 10px;font-size:14.5px}.adminnote b{color:#3a2a00}
 .warn{display:inline-block;margin-left:10px;color:var(--bad);font-weight:700;font-size:13.5px}
 .picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
 .grp{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
@@ -184,7 +185,7 @@ async function created(code){const url=siteUrl("#/enter");const direct=siteUrl("
   <h3 style="margin-top:16px">Pool Code</h3><div class="copyrow"><span class="big" id="cd">${esc(code)}</span><button class="b" data-copy="${esc(code)}">Copy code</button></div>
   ${(()=>{let k=null;try{k=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))}catch(e){}return k?`<div class="formula" style="border-left-color:#d7191f"><h3 style="margin:0 0 4px">🔑 Your private Admin Key</h3>
     <div class="copyrow" style="margin:6px 0"><span class="big" style="font-size:30px;letter-spacing:.12em">${esc(k)}</span><button class="b" data-copy="${esc(k)}">Copy key</button></div>
-    <b>Keep this to yourself and save it now — it is shown only once and cannot be recovered.</b> With it you can open the <a href="#/admin/${esc(code)}">Pool admin</a> page to remove duplicate or unwanted entries. Don't send it to the people you invite.</div>`:""})()}
+    <b>Keep this to yourself and save it now — it is shown only once and cannot be recovered.</b> With it you can open the <a href="#/admin/${esc(code)}">Pool admin</a> page to remove duplicate or unwanted entries, or add a note for people entering (e.g. "Please use your initials"). Don't send it to the people you invite.</div>`:""})()}
   <h3>"Enter a pool" page</h3><div class="copyrow"><input readonly value="${esc(url)}"><button class="b" data-copy="${esc(url)}">Copy link</button></div>
   <h3>Ready-to-paste invitation</h3><div class="copyrow"><input readonly id="inv" value="${esc(`You're invited to my free NHL ${mo?mn+" monthly":"playoff"} pool! Go to ${url} and enter Pool Code ${code}.`)}"><button class="b" data-copy-from="inv">Copy invitation</button></div>
   <p class="muted">Keep this code — you'll need it to check the pool's leaderboard. ${closes}</p>
@@ -225,7 +226,7 @@ async function form(code){
   const row=(g,p)=>`<label data-g="${g}" data-id="${esc(p.id)}" data-q="${esc((p.n+" "+p.t+" "+tname(p.t)).toLowerCase())}"><input type="checkbox">${bdg(p.t)} <span>${esc(p.n)}</span><span class="s">${g==="G"?`${p.gp} GP · ${(+p.sv).toFixed(3).replace(/^0/,"")}`:`${esc(p.pos)} · ${p.pts} pts`}</span></label>`;
   const grp=g=>`<div class="grp"><h4>${GNAME[g]} <span class="n" id="n_${g}">0 / ${NEED[g]}</span></h4><div class="lst">${g==="T"?tlist.map(t=>`<label data-g="T" data-id="${t}" data-q="${esc((t+" "+tname(t)).toLowerCase())}"><input type="checkbox">${bdg(t)} <span>${esc(tname(t))}</span></label>`).join(""):groups[g].map(p=>row(g,p)).join("")||`<p class="muted" style="padding:8px 12px">No players listed.</p>`}</div></div>`;
   view(`<div class="card"><h2>Entry Form · Pool ${esc(code)}</h2><p>${esc(season)} Stanley Cup Playoffs. Entries close ${st.deadline?`<b>${fmtD(st.deadline)}</b> (when the first playoff game starts)`:"when the first playoff game starts"}.</p>${FORMULA}
-    <div class="namebox" style="margin-top:14px"><h3>Your display name</h3><input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
+    <div class="namebox" style="margin-top:14px"><h3>Your display name</h3>${r.pool.note?`<p class="adminnote">📣 <b>From the pool admin:</b> ${esc(r.pool.note)}</p>`:""}<input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
     <h3 style="margin-top:18px">Your picks</h3><p>Choose 2 centres, 2 left wings, 2 right wings, 4 defence, 2 goaltenders and 5 teams. Players are listed by position, sorted by last name; a player listed at more than one position can only be picked once.</p>
     <input class="search" id="q" placeholder="Search players or teams…">
     <div class="picker">${["C","LW","RW","D","G","T"].map(grp).join("")}</div>
@@ -265,7 +266,7 @@ function formMonthly(code,r){
   const row=(g,p)=>`<label data-g="${g}" data-id="${esc(p.id)}" data-q="${esc((p.n+" "+p.t+" "+tname(p.t)).toLowerCase())}"><input type="checkbox">${bdg(p.t)} <span>${esc(p.n)}</span><span class="s">${g==="G"?`${p.gp} GP · ${(+p.sv).toFixed(3).replace(/^0/,"")}`:`${esc(p.pos)} · ${p.pts} pts`}</span></label>`;
   const grp=(g,body,tall)=>`<div class="grp"><h4>${GNAME[g]} <span class="n" id="n_${g}">0 / ${NEED_M[g]}</span></h4><div class="lst" style="max-height:${tall?"none":"820px"}">${body}</div></div>`;
   view(`<div class="card"><h2>Entry Form · Pool ${esc(code)}</h2><p>${esc(mn)} monthly pool. Entries close ${st.deadline?`<b>${fmtD(st.deadline)}</b> (when the first game of ${esc(mn)} starts)`:`when the first game of ${esc(mn)} starts`}.</p>${F}
-    <div class="namebox" style="margin-top:14px"><h3>Your display name</h3><input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
+    <div class="namebox" style="margin-top:14px"><h3>Your display name</h3>${r.pool.note?`<p class="adminnote">📣 <b>From the pool admin:</b> ${esc(r.pool.note)}</p>`:""}<input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
     <h3 style="margin-top:18px">Your picks</h3><p>Choose 10 skaters from the top 25 points leaders (any positions), 2 goaltenders and 5 teams. The top-25 list was frozen when this pool was created${P.frozen?` (points as of ${esc(P.frozen)})`:""}, so it's the same for everyone. Players are sorted by last name.</p>
     <input class="search" id="q" placeholder="Search players or teams…">
     <div class="picker">${grp("S",sk.map(p=>row("S",p)).join(""),true)}${grp("G",gk.map(p=>row("G",p)).join(""))}${grp("T",tlist.map(t=>`<label data-g="T" data-id="${t}" data-q="${esc((t+" "+tname(t)).toLowerCase())}"><input type="checkbox">${bdg(t)} <span>${esc(tname(t))}</span></label>`).join(""))}</div>
@@ -315,9 +316,15 @@ async function adminList(code,key){
   const what=r.pool.type==="monthly"?`${esc(r.pool.monthName)} monthly pool`:`${esc(r.pool.season)} playoff pool`;
   view(`<div class="card"><h2>Pool Admin · ${esc(code)}</h2><p>${what} · ${r.entries.length} ${r.entries.length===1?"entry":"entries"} · ${r.status.state==="open"?"open for entries":"entries closed"}</p>
     <p>Remove any entry you don't recognize, or extra entries from the same person. Each device can enter only once, but someone could still enter again from a different phone or computer. Removing an entry can't be undone.</p>
+    <div class="formula" style="margin:14px 0"><h3 style="margin:0 0 4px">📣 Note for people entering</h3><p style="margin:0 0 8px">Shown on the Entry Form above the display-name box, e.g. how you'd like names written.</p>
+      <div class="copyrow" style="margin:6px 0">${["Please use your initials.","Please use a nickname.","Please use your initials plus a team or number, e.g. JL-Habs."].map(t=>`<button class="b ghost" data-preset="${esc(t)}" style="padding:6px 10px;font-size:13px">${esc(t)}</button>`).join("")}</div>
+      <div class="copyrow" style="margin:6px 0"><input id="note" maxlength="140" placeholder="Write your own note (up to 140 characters), or leave empty for none" value="${esc(r.pool.note||"")}"><button class="b" id="savenote">Save note</button></div><div id="notemsg"></div></div>
     ${r.entries.length?`<table style="margin-top:10px"><tr><th class="l">Name</th><th>Entered</th><th></th></tr>${r.entries.map(e=>`<tr><td class="l"><b>${esc(e.name)}</b></td><td>${esc(new Date(e.entered).toLocaleString("en-CA",{timeZone:"America/Toronto",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td><button class="b red" data-rm="${esc(e.id)}" data-nm="${esc(e.name)}" style="padding:6px 12px">Remove</button></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
     <div class="copyrow" style="margin-top:14px"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><button class="b ghost" id="rf">Refresh</button></div><div id="msg"></div></div>`);
   $("#rf").onclick=()=>adminList(code,key);
+  app.querySelectorAll("[data-preset]").forEach(b=>b.onclick=()=>{$("#note").value=b.dataset.preset;$("#note").focus()});
+  $("#savenote").onclick=async()=>{const x=await api({action:"setnote",code,key,note:$("#note").value},true).catch(e=>({ok:false,error:e.message}));
+    $("#notemsg").innerHTML=x.ok?`<p class="okm">${x.note?"Saved ✓ — people entering will see this note.":"Note removed ✓"}</p>`:`<p class="err">${esc(x.error)}</p>`;if(x.ok)$("#note").value=x.note};
   app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>confirmBox(`<h3>Remove ${esc(b.dataset.nm)}?</h3><p>This entry will be deleted from the pool. This can't be undone.</p>`,async()=>{
     const x=await api({action:"remove",code,key,id:b.dataset.rm},true).catch(e=>({ok:false,error:e.message}));
     if(!x.ok){$("#msg").innerHTML=`<p class="err">${esc(x.error)}</p>`;return}adminList(code,key)},"Yes, remove"))}
