@@ -59,6 +59,8 @@ async function handle(ctx) {
     if (p.action === 'admin') return json(await adminView(ctx, p));
     if (p.action === 'remove') return json(await adminRemove(ctx, p));
     if (p.action === 'setnote') return json(await adminNote(ctx, p));
+    if (p.action === 'embedcode') return json(await adminEmbed(ctx, p));
+    if (p.action === 'embed') return json(await embedBoard(ctx, p));
     if (p.action === 'snapstatus') return json(await snapStatus(env, (await siteJSON(ctx, 'season.json')).season));
     if (p.action === 'snapnow') return json(await takeSnapshot(env));
     return json({ ok: false, error: 'Unknown request.' });
@@ -76,7 +78,7 @@ async function ensureTables(db) {
   ]);
   // monthly pools keep their month, N and frozen player list in "meta" (added after launch)
   const cols = await db.prepare('PRAGMA table_info(pools)').all();
-  for (const col of ['meta', 'admin_hash', 'note']) if (!cols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE pools ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
+  for (const col of ['meta', 'admin_hash', 'note', 'embed']) if (!cols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE pools ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
   const ecols = await db.prepare('PRAGMA table_info(entries)').all();
   for (const col of ['device', 'ekey']) if (!ecols.results.some(c => c.name === col)) { try { await db.prepare(`ALTER TABLE entries ADD COLUMN ${col} TEXT`).run(); } catch (e) {} }
   tablesReady = true;
@@ -328,4 +330,23 @@ async function adminNote(ctx, p) {
   if (n && !NAME_NOTES[n]) return { ok: false, error: 'Please choose one of the listed requests.' };
   await ctx.env.DB.prepare('UPDATE pools SET note = ? WHERE code = ?').bind(n || null, pool.code).run();
   return { ok: true, note: n, text: noteText(n) };
+}
+
+// ---------- website embed (live leaderboard on the admin's own site; uses a separate token, never the Pool Code) ----------
+async function adminEmbed(ctx, p) {
+  const { pool, err } = await adminPool(ctx, p);
+  if (err) return { ok: false, error: err };
+  let tok = (await ctx.env.DB.prepare('SELECT embed FROM pools WHERE code = ?').bind(pool.code).first()).embed;
+  if (!tok || p.reset) { tok = randKey(14, 'abcdefghijkmnpqrstuvwxyz23456789'); await ctx.env.DB.prepare('UPDATE pools SET embed = ? WHERE code = ?').bind(tok, pool.code).run(); }
+  return { ok: true, token: tok };
+}
+async function embedBoard(ctx, p) {
+  const tok = String(p.e || '').replace(/[^a-z0-9]/g, '');
+  if (tok.length < 10) return { ok: false, error: 'This leaderboard link is not valid.' };
+  await ensureTables(ctx.env.DB);
+  const row = await ctx.env.DB.prepare('SELECT code FROM pools WHERE embed = ?').bind(tok).first();
+  if (!row) return { ok: false, error: 'This leaderboard is no longer available.' };
+  const r = await getPool(ctx, { code: row.code });
+  if (r && r.pool) delete r.pool.code;
+  return r;
 }

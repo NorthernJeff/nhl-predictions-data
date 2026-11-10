@@ -80,6 +80,8 @@ tr.me td{background:rgba(233,189,63,.18)}
 .muted{color:var(--muted)}
 .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--soft);border:1px solid var(--line)}
 @media (max-width:600px){.big{font-size:34px}.card{padding:18px}}
+body.embed{background:transparent}body.embed .top{display:none}body.embed main{max-width:none;margin:0;padding:8px}body.embed .card{margin:0;padding:14px 16px}
+.emb h2{margin:0 0 2px;font-size:18px}.emb th:first-child,.emb td:first-child{width:44px;text-align:left}.emb table{font-size:14px}.emb .foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}.emb .foot a{color:var(--muted);font-weight:700}
 </style>
 </head>
 <body>
@@ -172,7 +174,9 @@ function route(){const h=(location.hash||"#/").slice(1).split("/").filter(Boolea
   ready.then(()=>{const [v,a]=h;
     if(!v)return home();if(v==="start")return start();if(v==="created")return created(a);if(v==="enter")return enter(a);
     if(v==="form")return form(a);if(v==="rank")return rank(a);if(v==="board")return board(a);if(v==="admin")return admin(a);home()})}
-window.addEventListener("hashchange",route);route();
+const EMB=new URLSearchParams(location.search).get("embed");
+if(EMB){document.body.classList.add("embed");{const m=document.createElement("meta");m.name="robots";m.content="noindex";document.head.appendChild(m)}if(new URLSearchParams(location.search).get("theme")==="dark")document.body.classList.add("dark");else document.body.classList.remove("dark");ready.then(()=>embedBoard(EMB))}
+else{window.addEventListener("hashchange",route);route()}
 
 function home(){view(`<div class="card"><h1>🏒 Hockey Pools</h1><p>Free to enter. Start a pool for your friends, family or clients, share the 6-digit Pool Code, and follow the standings as the games are played.</p>
   <div class="choices">
@@ -328,6 +332,23 @@ function confirmBox(html,yes,yesLabel){const m=document.createElement("div");m.c
   m.innerHTML=`<div class="box">${html}<div class="row"><button class="b ghost" id="no">No, go back</button><button class="b red" id="yes">${yesLabel||"Yes, enter"}</button></div></div>`;
   document.body.appendChild(m);m.querySelector("#no").onclick=()=>m.remove();m.querySelector("#yes").onclick=()=>{m.remove();yes()}}
 
+// ---------- website embed ----------
+async function embedBoard(tok){
+  let r;try{r=await api({action:"embed",e:tok})}catch(e){r={ok:false,error:e.message}}
+  if(!r.ok)return view(`<div class="card emb"><p class="err">${esc(r.error)}</p></div>`);
+  const mo=r.pool.type==="monthly",mn=mo?r.pool.monthName:"";
+  const po=mo?null:await poFor(r.pool.season),score=mo?await monthlyScorer(r.pool):scorer(po);
+  const rows=r.entries.map(e=>({e,s:e.picks?score(e.picks):null}));
+  if(r.picksVisible)rows.sort((a,b)=>b.s.total-a.s.total||a.e.name.localeCompare(b.e.name));else rows.sort((a,b)=>a.e.name.localeCompare(b.e.name));
+  let rk=0,prev=null;rows.forEach((x,i)=>{const t=x.s?x.s.total:null;if(t!==prev){rk=i+1;prev=t}x.rk=rk});
+  const tie=i=>rows.some((y,j)=>j!==i&&y.rk===rows[i].rk);
+  const title=mo?`${esc(mn)} Hockey Pool`:`${esc(r.pool.season)} Playoff Pool`;
+  const sub=r.status.state==="closed"?`${rows.length} ${rows.length===1?"entry":"entries"} · live scores`:`${rows.length} ${rows.length===1?"entry":"entries"} so far · scores start when entries close`;
+  view(`<div class="card emb"><h2>🏒 ${title}</h2><p class="muted" style="margin:0 0 8px">${sub}</p>
+    ${rows.length?`<table><tr><th>#</th><th class="l">Name</th>${r.picksVisible?"<th>Score</th>":""}</tr>${rows.map((x,i)=>`<tr><td>${r.picksVisible?(tie(i)?"T":"")+x.rk:i+1}</td><td class="l">${esc(x.e.name)}</td>${r.picksVisible?`<td><b>${x.s.total.toFixed(2)}</b></td>`:""}</tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
+    <div class="foot"><span>Updated ${new Date().toLocaleTimeString("en-CA",{hour:"numeric",minute:"2-digit"})}</span><a href="https://hockeypooler.com/pools" target="_blank" rel="noopener">Live from Hockey Pooler</a></div></div>`);
+  clearTimeout(window._embT);window._embT=setTimeout(()=>embedBoard(tok),10*60*1000)}
+
 // ---------- pool admin ----------
 function admin(code){
   let saved="";try{saved=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))||""}catch(e){}
@@ -351,7 +372,20 @@ async function adminList(code,key){
     <div class="formula" style="margin:14px 0"><h3 style="margin:0 0 4px">📣 Name request</h3><p style="margin:0 0 8px">Optional. Shown on the Entry Form above the display-name box.</p>
       <div class="copyrow" style="margin:6px 0"><select id="note" class="search" style="width:auto;min-width:300px">${[["","No request"],["1","Please use your initials."],["2","Please use a nickname."],["3","Please use your initials plus a team or number, e.g. JL-Habs."]].map(([v,t])=>`<option value="${v}"${(r.pool.note||"")===v?" selected":""}>${esc(t)}</option>`).join("")}</select><button class="b" id="savenote">Save</button></div><div id="notemsg"></div></div>
     ${r.entries.length?`<table style="margin-top:10px"><tr><th class="l">Name</th><th>Entry Key</th><th>Entered</th><th></th></tr>${r.entries.map(e=>`<tr><td class="l"><b>${esc(e.name)}</b></td><td style="font-variant-numeric:tabular-nums;letter-spacing:.06em"><b>${esc(e.ekey||"–")}</b></td><td>${esc(new Date(e.entered).toLocaleString("en-CA",{timeZone:"America/Toronto",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td><button class="b red" data-rm="${esc(e.id)}" data-nm="${esc(e.name)}" style="padding:6px 12px">Remove</button></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`}
+    <div class="formula" style="margin:16px 0 0"><h3 style="margin:0 0 4px">🖥️ Show the leaderboard on your website</h3>
+      <p style="margin:0 0 8px">Paste this code into your website (for example, in an "HTML" or "Embed code" block). It shows a live, always-current leaderboard: names and scores only, no picks, no Pool Code.</p>
+      <div class="copyrow" style="margin:6px 0"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="embdark"> Dark version</label><button class="b" id="embget">Get the code</button></div>
+      <div id="embout"></div></div>
     <div class="copyrow" style="margin-top:14px"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><button class="b ghost" id="rf">Refresh</button></div><div id="msg"></div></div>`);
+  const embShow=async reset=>{const x=await api({action:"embedcode",code,key,reset:!!reset},true).catch(e=>({ok:false,error:e.message}));
+    if(!x.ok){$("#embout").innerHTML=`<p class="err">${esc(x.error)}</p>`;return}
+    const src=`https://hockeypooler.com/pools?embed=${x.token}${$("#embdark").checked?"&theme=dark":""}`;
+    const snip=`<iframe src="${src}" title="Hockey pool leaderboard" width="100%" height="520" style="border:0;max-width:640px" loading="lazy"></iframe>`;
+    $("#embout").innerHTML=`<textarea readonly rows="3" style="width:100%;font:13px ui-monospace,Consolas,monospace;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)">${esc(snip)}</textarea>
+      <div class="copyrow" style="margin:6px 0"><button class="b" data-copy="${esc(snip)}">Copy code</button><a class="b ghost" href="${esc(src)}" target="_blank" rel="noopener" style="text-decoration:none">Preview</a><button class="b ghost" id="embreset">Replace link</button></div>
+      <p class="muted" style="margin:4px 0 0">"Replace link" turns off the old code everywhere it was pasted and gives you a new one.</p>`;
+    bindCopy();$("#embreset").onclick=()=>confirmBox(`<h3>Replace the website link?</h3><p>The leaderboard will stop showing anywhere the old code was pasted.</p>`,()=>embShow(true),"Yes, replace")};
+  $("#embget").onclick=()=>embShow(false);$("#embdark").onchange=()=>{if($("#embout").innerHTML)embShow(false)};
   $("#rf").onclick=()=>adminList(code,key);
   $("#savenote").onclick=async()=>{const x=await api({action:"setnote",code,key,note:$("#note").value},true).catch(e=>({ok:false,error:e.message}));
     $("#notemsg").innerHTML=x.ok?`<p class="okm">${x.text?"Saved ✓ — people entering will see this request.":"Request removed ✓"}</p>`:`<p class="err">${esc(x.error)}</p>`};
