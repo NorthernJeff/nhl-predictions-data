@@ -302,7 +302,8 @@ nav.tabs a.po.locked{filter:grayscale(1);opacity:.5}nav.tabs a.po.locked.on{opac
 .ser .sf b{color:var(--ink)}
 .cupc{display:flex;flex-direction:column;justify-content:center;gap:8px}
 .champ{text-align:center;padding:10px;border-radius:10px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;font-weight:800}
-.hg .poline{grid-column:1/-1;margin:-2px 0 -4px}.poolbtn{margin-left:14px;font-weight:800;font-size:16px;padding:8px 22px;letter-spacing:.01em;border-radius:999px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00!important;text-decoration:none;box-shadow:inset 0 0 0 1px #c99a1e;white-space:nowrap}.poolbtn:hover{filter:brightness(1.06)}@media(max-width:640px){.poolbtn{font-size:14px;padding:6px 15px;margin-left:8px}header .legend{flex-wrap:wrap;row-gap:8px;margin-left:0}}footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}footer a.flink{font-weight:700;white-space:nowrap}.potab td.nm{text-align:left}.potab th.nm{text-align:left}.pob{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:7px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;margin-right:6px}
+.hg .poline{grid-column:1/-1;margin:-2px 0 -4px}.poolbtn{margin-left:14px;font-weight:800;font-size:16px;padding:8px 22px;letter-spacing:.01em;border-radius:999px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00!important;text-decoration:none;box-shadow:inset 0 0 0 1px #c99a1e;white-space:nowrap}.poolbtn:hover{filter:brightness(1.06)}@media(max-width:640px){.poolbtn{font-size:14px;padding:6px 15px;margin-left:8px}header .legend{flex-wrap:wrap;row-gap:8px;margin-left:0}}header .lg{display:none}body.onchart header .lg{display:inline}
+footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}footer a.flink{font-weight:700;white-space:nowrap}.potab td.nm{text-align:left}.potab th.nm{text-align:left}.pob{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:7px;background:linear-gradient(180deg,#fff4c2,#e9bd3f);color:#3a2a00;margin-right:6px}
 .lbwrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px;align-items:start}
 .lbc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 12px 8px;min-width:0}
 .lbc.wide{grid-column:1/-1}.lbc h3{margin:0 0 3px;font-size:15px}.lbhead{display:flex;align-items:center;gap:10px}.lbhead h3{margin-right:auto}
@@ -1036,7 +1037,7 @@ function noGamesMsg(){if(SEASON.phase==="offseason"||(poUnlocked()&&bracketModel
 // ----- tabs -----
 let curTab="home";
 const PANES={home:"paneHome",chart:"paneChart",stats:"paneStats",compare:"paneCompare",leaders:"paneLeaders",bracket:"paneBracket",poleaders:"panePoLeaders"};
-function showTab(t){if(!PANES[t])t="home";if((t==="stats"||t==="compare")&&!gamePicked)t="home";curTab=t;
+function showTab(t){if(!PANES[t])t="home";if((t==="stats"||t==="compare")&&!gamePicked)t="home";curTab=t;document.body.classList.toggle("onchart",t==="chart");
   for(const k in PANES)document.getElementById(PANES[k]).classList.toggle("on",k===t);
   document.querySelectorAll("nav.tabs a").forEach(a=>a.classList.toggle("on",a.dataset.tab===t));
   if(t==="chart")requestAnimationFrame(resize);if(t==="stats"||t==="compare")renderStats();if(t==="leaders")renderLeaders();if(t==="home")renderHome();if(t==="bracket")renderBracket();if(t==="poleaders")renderPoLeaders()}
