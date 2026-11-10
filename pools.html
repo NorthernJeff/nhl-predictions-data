@@ -51,6 +51,7 @@ p{color:var(--ink2);margin:6px 0}
 .sect{border:1px solid var(--line);border-radius:12px;padding:6px 18px 4px;margin:16px 0}.sect.share{border-left:4px solid var(--acc)}.sect.keep{border-left:4px solid #d7191f;padding-bottom:12px}
 .secth{font-size:17px;margin:12px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}.sect h3:not(.secth){margin-top:14px}
 .namebox input{font:inherit;font-size:17px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:min(360px,100%)}
+.flab{font-weight:700;font-size:14px;margin-bottom:-4px}.flab span{font-weight:400;color:var(--muted)}
 .adminnote{background:#fff4c2;color:#3a2a00;border:1px solid #e9bd3f;border-radius:8px;padding:8px 12px;margin:4px 0 10px;font-size:14.5px}.adminnote b{color:#3a2a00}
 .ekey{margin-top:16px;background:var(--soft);border:1px dashed #e9bd3f;border-radius:10px;padding:10px 14px}.ekey h3{margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ek{font-size:22px;letter-spacing:.12em;font-variant-numeric:tabular-nums}.ekok{display:flex;align-items:center;gap:8px;font-weight:700;margin-top:6px;cursor:pointer}
 .warn{display:inline-block;margin-left:10px;color:var(--bad);font-weight:700;font-size:13.5px}
@@ -354,11 +355,18 @@ function admin(code){
   let saved="";try{saved=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))||""}catch(e){}
   view(`<div class="card"><h2>Pool Admin</h2><p>Enter your pool's 6-digit Pool Code and the private Admin Key you were given when you started the pool.</p>
     <form id="af" style="margin-top:14px;display:grid;gap:10px;max-width:420px">
-      <input class="codein" id="code" inputmode="numeric" maxlength="6" placeholder="••••••" value="${esc(code||"")}" autocomplete="off">
-      <input class="search" id="key" placeholder="Admin Key, e.g. ABCDE-FGHJK" value="${esc(saved)}" autocomplete="off" style="width:100%;font-size:17px;letter-spacing:.08em">
+      <label class="flab" for="code">1. Pool Code <span>(6 numbers, the code you share with everyone)</span></label>
+      <input class="codein" id="code" inputmode="numeric" maxlength="6" placeholder="123456" value="${esc(code||"")}" autocomplete="off">
+      <label class="flab" for="key">2. Admin Key <span>(letters and numbers, the private key only you have)</span></label>
+      <input class="search" id="key" placeholder="e.g. ABCDE-FGHJK" value="${esc(saved)}" autocomplete="off" style="width:100%;font-size:17px;letter-spacing:.08em">
       <div><button class="b" type="submit">Open admin page →</button></div></form><div id="msg"></div></div>`);
   const c=$("#code");c.oninput=()=>c.value=c.value.replace(/\D/g,"").slice(0,6);
-  $("#af").onsubmit=e=>{e.preventDefault();adminList(c.value,$("#key").value.trim())}
+  $("#af").onsubmit=e=>{e.preventDefault();const k=$("#key").value.trim();
+    if(/^\d{6}$/.test(k)&&!c.value){c.value=k;$("#key").value="";$("#msg").innerHTML=`<p class="err">That looks like your Pool Code, so it was moved to box 1. Now enter your Admin Key in box 2.</p>`;$("#key").focus();return}
+    if(!/^\d{6}$/.test(c.value)){$("#msg").innerHTML=`<p class="err">Please enter the 6-number Pool Code in box 1.</p>`;c.focus();return}
+    if(/^\d{6}$/.test(k)){$("#msg").innerHTML=`<p class="err">Box 2 needs the Admin Key (letters and numbers, like ABCDE-FGHJK), not a Pool Code.</p>`;$("#key").focus();return}
+    if(!k){$("#msg").innerHTML=`<p class="err">Please enter your Admin Key in box 2.</p>`;$("#key").focus();return}
+    adminList(c.value,k)}
   if(code&&saved)adminList(code,saved)}
 async function adminList(code,key){
   $("#msg").innerHTML=`<p>Checking…</p>`;
