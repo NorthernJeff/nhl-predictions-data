@@ -86,7 +86,35 @@ tr.me td{background:rgba(233,189,63,.18)}
 @media (max-width:600px){.big{font-size:34px}.card{padding:18px}}
 body.embed{background:transparent}body.embed .top{display:none}body.embed main{max-width:none;margin:0;padding:8px}body.embed .card{margin:0;padding:14px 16px}
 .emb h2{margin:0 0 2px;font-size:18px}.emb th:first-child,.emb td:first-child{width:44px;text-align:left}.emb table{font-size:14px}.emb .foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}.emb .foot a{color:var(--muted);font-weight:700}
+.b.pdf{background:#1c2230;color:#fff}body.dark .b.pdf{background:#e8ecf2;color:#1c2230}
+#printsheet{display:none}
+@media print{
+  @page{margin:14mm}
+  body>*:not(#printsheet){display:none!important}
+  body,body.dark{background:#fff!important;color:#000}
+  #printsheet{display:block;color:#111;font:12.5pt/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printsheet .ph{display:flex;align-items:center;gap:10px;border-bottom:2px solid #e9bd3f;padding-bottom:8px;margin-bottom:14px}
+  #printsheet .ph img{width:34px;height:34px}
+  #printsheet .ph b{font-family:"Graduate",Georgia,serif;font-size:18pt;letter-spacing:.06em;text-transform:uppercase}
+  #printsheet .ph span{margin-left:auto;color:#555;font-size:10.5pt}
+  #printsheet h1{font-size:19pt;margin:0 0 4px}
+  #printsheet h2{font-size:13pt;margin:16px 0 6px}
+  #printsheet p{color:#333;margin:4px 0}
+  #printsheet .pbox{border:1.5px solid #ccc;border-radius:8px;padding:10px 14px;margin:10px 0;break-inside:avoid}
+  #printsheet .pbox.key{border-color:#d7191f}
+  #printsheet .pbig{font-size:26pt;font-weight:900;letter-spacing:.14em;font-variant-numeric:tabular-nums}
+  #printsheet .plab{font-size:10pt;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#666}
+  #printsheet table{width:100%;border-collapse:collapse;font-size:11pt}
+  #printsheet th,#printsheet td{padding:5px 8px;border-bottom:1px solid #ddd;text-align:right}
+  #printsheet th{color:#555;font-size:9.5pt}
+  #printsheet td.l,#printsheet th.l{text-align:left}
+  #printsheet tr{break-inside:avoid}
+  #printsheet .pfoot{margin-top:18px;padding-top:6px;border-top:1px solid #ddd;color:#666;font-size:9.5pt}
+  #printsheet .badge{color:#fff}
+  #printsheet .pcols{columns:2;column-gap:24px;font-size:11pt}#printsheet .pcols div{break-inside:avoid;margin-bottom:8px}
+}
 </style>
+<style>@font-face{font-family:"Graduate";src:url(/graduate.woff2) format("woff2");font-display:swap}</style>
 </head>
 <body>
 <div class="top"><a class="btn back" href="index.html">← Back to the app</a><a class="btn" href="#/">🏒 Pools</a><span class="sp"></span><button id="modebtn">☀ Light</button></div>
@@ -210,6 +238,7 @@ async function created(code){const url=siteUrl("#/enter");const direct=siteUrl("
   let P=null;try{const r=await api({action:"pool",code});if(r.ok)P=r}catch(e){}
   const mo=P&&P.pool.type==="monthly",mn=mo?P.pool.monthName:"";
   const what=mo?`${esc(mn)} monthly pool`:`${esc(SEASON.season||"")} playoff pool`;
+  let k0=null;try{k0=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))}catch(e){}
   const closes=mo?`Entries close when the first game of ${esc(mn)} starts${P.status.deadline?` (${fmtD(P.status.deadline)})`:""}. The top-25 player list for this pool is now frozen.`:"Entries close when the first playoff game starts.";
   view(`<div class="card"><h2>Your pool is ready 🎉</h2><p>You're the admin of this ${what}. Send the Pool Code and the link below to everyone you'd like to invite.</p>
   <div class="sect share"><h3 class="secth">📤 For you to share</h3>
@@ -217,15 +246,39 @@ async function created(code){const url=siteUrl("#/enter");const direct=siteUrl("
   <h3>"Enter a pool" page</h3><div class="copyrow"><input readonly value="${esc(url)}"><button class="b" data-copy="${esc(url)}">Copy link</button></div>
   <h3>Ready-to-paste invitation</h3><div class="copyrow"><input readonly id="inv" value="${esc(`You're invited to my free NHL ${mo?mn+" monthly":"playoff"} pool! Go to ${url} and enter Pool Code ${code}.`)}"><button class="b" data-copy-from="inv">Copy invitation</button></div>
   </div>
-  ${(()=>{let k=null;try{k=JSON.parse(sessionStorage.getItem("nhlwl:admin:"+code))}catch(e){}return k?`<div class="sect keep"><h3 class="secth">🔒 For you to keep to yourself</h3><div><h3 style="margin:0 0 4px">🔑 Your private Admin Key</h3>
+  ${(()=>{const k=k0;return k?`<div class="sect keep"><h3 class="secth">🔒 For you to keep to yourself</h3><div><h3 style="margin:0 0 4px">🔑 Your private Admin Key</h3>
     <div class="copyrow" style="margin:6px 0"><span class="big" style="font-size:30px;letter-spacing:.12em">${esc(k)}</span><button class="b" data-copy="${esc(k)}">Copy key</button></div>
     <b>Keep this to yourself and save it now — it is shown only once and cannot be recovered.</b> With it you can open the <a href="#/admin/${esc(code)}">Pool admin</a> page to remove duplicate or unwanted entries, or ask people to use initials or a nickname. Don't send it to the people you invite.</div></div>`:""})()}
-  <p class="muted">Save the Pool Code for yourself too — you'll need it to check the pool's leaderboard. ${closes}</p>
+  <div class="copyrow" style="margin:4px 0 0">${pdfBtn("pdf",k0?"Save Pool Code & Admin Key as PDF":"Save Pool Code as PDF")}</div>${pdfHint}
+  <p class="muted" style="margin-top:12px">Save the Pool Code for yourself too — you'll need it to check the pool's leaderboard. ${closes}</p>
   <div class="copyrow"><a class="b ghost" href="#/board/${esc(code)}" style="text-decoration:none">View the leaderboard</a><a class="b ghost" href="#/form/${esc(code)}" style="text-decoration:none">Enter your own picks</a></div></div>`);
-  bindCopy()}
+  bindCopy();
+  $("#pdf").onclick=()=>printSheet(`Your ${what}`,
+    `<p>You're the admin of this pool. ${closes}</p>
+    <div class="pbox"><div class="plab">Pool Code — share with the people you invite</div><div class="pbig">${esc(code)}</div>
+      <p>Enter a pool page: <b>${esc(url)}</b></p></div>
+    ${k0?`<div class="pbox key"><div class="plab">🔒 Private Admin Key — keep this to yourself</div><div class="pbig" style="font-size:22pt">${esc(k0)}</div>
+      <p>With the Pool Code and this key you can open the Pool admin page (hockeypooler.com/pools → Pool admin) to remove duplicate or unwanted entries. It cannot be recovered if lost. Don't send it to the people you invite.</p></div>`:""}
+    <h2>Invitation to send</h2><p>You're invited to my free NHL ${mo?esc(mn)+" monthly":"playoff"} pool! Go to ${esc(url)} and enter Pool Code ${esc(code)}.</p>
+    <p>Leaderboard: hockeypooler.com/pools → Check your ranking → Pool Code ${esc(code)}</p>`,
+    `Hockey Pooler - Pool ${code}${k0?" - Admin Key":""}`)}
 function bindCopy(){app.querySelectorAll("[data-copy],[data-copy-from]").forEach(b=>b.onclick=async()=>{const t=b.dataset.copy||document.getElementById(b.dataset.copyFrom).value;
   try{await navigator.clipboard.writeText(t)}catch(e){const i=document.createElement("textarea");i.value=t;document.body.appendChild(i);i.select();document.execCommand("copy");i.remove()}
   const o=b.textContent;b.textContent="Copied ✓";setTimeout(()=>b.textContent=o,1500)})}
+
+// ---------- print / save as PDF ----------
+// Builds a clean one-page sheet and opens the browser's print window, where "Save as PDF" is one of the printers.
+const nowET=()=>new Date().toLocaleString("en-CA",{timeZone:"America/Toronto",weekday:"long",year:"numeric",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET";
+async function printSheet(title,body,file){
+  let s=document.getElementById("printsheet");if(!s){s=document.createElement("div");s.id="printsheet";document.body.appendChild(s)}
+  s.innerHTML=`<div class="ph"><img src="/logo.png" alt=""><b>Hockey Pooler</b><span>hockeypooler.com</span></div><h1>${title}</h1>${body}<p class="pfoot">Created ${esc(nowET())} · hockeypooler.com/pools</p>`;
+  // wait for the logo and font so they appear in the PDF
+  await Promise.race([Promise.all([...s.querySelectorAll("img")].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r}))).then(()=>document.fonts&&document.fonts.ready),new Promise(r=>setTimeout(r,1500))]);
+  const old=document.title;document.title=file;// Chrome/Edge use the page title as the PDF's file name
+  const done=()=>{document.title=old;window.removeEventListener("afterprint",done)};window.addEventListener("afterprint",done);setTimeout(done,60000);
+  window.print()}
+const pdfBtn=(id,label)=>`<button class="b pdf" type="button" id="${id}">🖨️ ${label||"Print / Save as PDF"}</button>`;
+const pdfHint=`<p class="muted" style="margin:4px 0 0;font-size:13px">In the print window, choose <b>Save as PDF</b> (or <b>Microsoft Print to PDF</b>) as the printer. On a phone, use Print, then Share or Save to Files.</p>`;
 
 function codeForm(title,sub,go,pre){view(`<div class="card"><h2>${title}</h2><p>${sub}</p>
   <form id="cf" class="copyrow" style="margin-top:14px"><input class="codein" id="code" inputmode="numeric" maxlength="6" placeholder="••••••" value="${esc(pre||"")}" autocomplete="off"><button class="b" type="submit">Continue →</button></form><div id="msg"></div></div>${noApi()}`);
@@ -261,6 +314,7 @@ async function form(code){
     <div class="namebox" style="margin-top:14px"><h3>Your display name</h3>${r.pool.note?`<p class="adminnote">📣 <b>From the pool admin:</b> ${esc(r.pool.note)}</p>`:""}<input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
     <div class="ekey"><h3>🎟️ Your Entry Key: <span class="ek">${EKEY}</span> <button class="b" type="button" data-copy="${EKEY}" style="padding:6px 12px;font-size:13px">Copy</button></h3>
       <p>Save this key. If you win, give it to the pool admin to prove the entry is yours. Only you and the admin can see it.</p>
+      <div class="copyrow" style="margin:8px 0 4px">${pdfBtn("pdf","Save Pool Code & Entry Key as PDF")}</div>${pdfHint}
       <label class="ekok"><input type="checkbox" id="ekok"> I've saved my Entry Key.</label></div>
     <h3 style="margin-top:18px">Your picks</h3><p>Choose 2 centres, 2 left wings, 2 right wings, 4 defence, 2 goaltenders and 5 teams. Players are listed by position, sorted by last name; a player listed at more than one position can only be picked once.</p>
     <input class="search" id="q" placeholder="Search players or teams…">
@@ -280,6 +334,7 @@ async function form(code){
   app.querySelectorAll("label[data-g]").forEach(l=>l.querySelector("input").onchange=e=>{const g=l.dataset.g,id=l.dataset.id;
     if(e.target.checked){if(sel[g].length<NEED[g])sel[g].push(id)}else sel[g]=sel[g].filter(x=>x!==id);refresh()});
   $("#nm").oninput=refresh;$("#ekok").onchange=refresh;bindCopy();
+  $("#pdf").onclick=()=>entryPdf(code,`${season} Stanley Cup Playoffs pool`,st.deadline?`Entries close ${fmtD(st.deadline)} (when the first playoff game starts).`:"Entries close when the first playoff game starts.",sel,["C","LW","RW","D","G","T"],NEED);
   $("#q").oninput=()=>{const q=$("#q").value.trim().toLowerCase();app.querySelectorAll("label[data-g]").forEach(l=>l.style.display=!q||l.dataset.q.includes(q)?"":"none")};
   $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p><p>Your Entry Key: <b>${EKEY}</b></p>`,async()=>{
     const b=$("#go");b.disabled=true;$("#sum").textContent="Sending your entry…";
@@ -289,6 +344,19 @@ async function form(code){
       location.hash="#/board/"+code}
     catch(e){$("#sum").innerHTML=`<span class="err">${esc(e.message)}</span>`;b.disabled=false}});
   refresh()}
+
+function entryPdf(code,what,closes,sel,order,need){
+  const nm=($("#nm").value||"").trim().replace(/\s+/g," ");
+  const nmOf=id=>id.slice(id.indexOf("|")+1),tmOf=id=>id.slice(0,id.indexOf("|"));
+  const any=order.some(g=>sel[g].length);
+  const picks=any?`<h2>Picks selected when this was printed</h2><p class="muted" style="font-size:10pt">Your entry only counts once you press <b>Enter</b> and confirm on the website. Picks can't be changed after that.</p>
+    <div class="pcols">${order.map(g=>`<div><b>${GNAME[g]} (${sel[g].length} / ${need[g]})</b><br>${sel[g].length?sel[g].map(id=>g==="T"?`${esc(id)} · ${esc(tname(id))}`:`${esc(nmOf(id))} (${esc(tmOf(id))})`).join("<br>"):"<span class=muted>—</span>"}</div>`).join("")}</div>`:"";
+  printSheet(`My entry · Pool ${esc(code)}`,
+    `<p>${esc(what)}. ${esc(closes)}</p>
+    ${nm?`<p>Display name: <b>${esc(nm)}</b></p>`:""}
+    <div class="pbox"><div class="plab">Pool Code</div><div class="pbig">${esc(code)}</div><p>Check the standings any time: hockeypooler.com/pools → Check your ranking → enter this code.</p></div>
+    <div class="pbox key"><div class="plab">🎟️ Your private Entry Key</div><div class="pbig" style="font-size:22pt">${esc(EKEY)}</div><p>Keep this to yourself. If you win, give it to the pool admin to prove the entry is yours.</p></div>${picks}`,
+    `Hockey Pooler - Pool ${code} - Entry Key`)}
 
 function formMonthly(code,r){EKEY=newEKey();
   const st=r.status,P=r.pool,mn=P.monthName,F=formulaM(P.n,mn);
@@ -305,6 +373,7 @@ function formMonthly(code,r){EKEY=newEKey();
     <div class="namebox" style="margin-top:14px"><h3>Your display name</h3>${r.pool.note?`<p class="adminnote">📣 <b>From the pool admin:</b> ${esc(r.pool.note)}</p>`:""}<input id="nm" maxlength="24" placeholder="e.g. JL or PuckLuck77" autocomplete="off"><span class="warn">⚠ Do not use your real name — use initials or a nickname.</span><div id="nmmsg"></div></div>
     <div class="ekey"><h3>🎟️ Your Entry Key: <span class="ek">${EKEY}</span> <button class="b" type="button" data-copy="${EKEY}" style="padding:6px 12px;font-size:13px">Copy</button></h3>
       <p>Save this key. If you win, give it to the pool admin to prove the entry is yours. Only you and the admin can see it.</p>
+      <div class="copyrow" style="margin:8px 0 4px">${pdfBtn("pdf","Save Pool Code & Entry Key as PDF")}</div>${pdfHint}
       <label class="ekok"><input type="checkbox" id="ekok"> I've saved my Entry Key.</label></div>
     <h3 style="margin-top:18px">Your picks</h3><p>Choose 10 skaters from the top 25 points leaders (any positions), 2 goaltenders and 5 teams. The top-25 list was frozen when this pool was created${P.frozen?` (points as of ${esc(P.frozen)})`:""}, so it's the same for everyone. Players are sorted by last name.</p>
     <input class="search" id="q" placeholder="Search players or teams…">
@@ -323,6 +392,7 @@ function formMonthly(code,r){EKEY=newEKey();
   app.querySelectorAll("label[data-g]").forEach(l=>l.querySelector("input").onchange=e=>{const g=l.dataset.g,id=l.dataset.id;
     if(e.target.checked){if(sel[g].length<NEED_M[g])sel[g].push(id)}else sel[g]=sel[g].filter(x=>x!==id);refresh()});
   $("#nm").oninput=refresh;$("#ekok").onchange=refresh;bindCopy();
+  $("#pdf").onclick=()=>entryPdf(code,`${mn} monthly pool`,st.deadline?`Entries close ${fmtD(st.deadline)} (when the first game of ${mn} starts).`:`Entries close when the first game of ${mn} starts.`,sel,["S","G","T"],NEED_M);
   $("#q").oninput=()=>{const q=$("#q").value.trim().toLowerCase();app.querySelectorAll("label[data-g]").forEach(l=>l.style.display=!q||l.dataset.q.includes(q)?"":"none")};
   $("#go").onclick=()=>confirmBox(`<h3>Are you sure?</h3><p>Changes cannot be made after entering.</p><p>Your Entry Key: <b>${EKEY}</b></p>`,async()=>{
     const b=$("#go");b.disabled=true;$("#sum").textContent="Sending your entry…";
@@ -429,8 +499,17 @@ async function board(code){
       <tr id="pk${i}" hidden><td colspan="6" class="l"></td></tr>`).join("")}</table>`:`<p class="muted">No entries yet.</p>`;
   view(`<div class="card"><h2>Pool Leaderboard · ${esc(code)}</h2><p>${mo?`${esc(mn)} monthly pool`:`${esc(season)} Stanley Cup Playoffs`} · ${rows.length} ${rows.length===1?"entry":"entries"}</p>${head}${mo?formulaM(r.pool.n,mn):FORMULA}
     ${r.picksVisible?`<p class="muted">Click a name to see that entry's picks.</p>`:""}${tbl}
-    <div class="copyrow" style="margin-top:14px">${st.state==="open"?`<a class="b" href="#/form/${esc(code)}" style="text-decoration:none">Enter this pool</a>`:""}<button class="b ghost" id="rf">Refresh</button></div></div>`);
+    <div class="copyrow" style="margin-top:14px">${st.state==="open"?`<a class="b" href="#/form/${esc(code)}" style="text-decoration:none">Enter this pool</a>`:""}<button class="b ghost" id="rf">Refresh</button>${rows.length?pdfBtn("pdf","Save standings as PDF"):""}</div></div>`);
   $("#rf").onclick=()=>board(code);
+  if($("#pdf"))$("#pdf").onclick=()=>{const plain=h=>h.replace(/<\/span>\s*/,". ").replace(/<[^>]+>/g,"");
+    printSheet(`Pool Standings · ${esc(code)}`,
+      `<p>${mo?`${esc(mn)} monthly pool`:`${esc(season)} Stanley Cup Playoffs`} · ${rows.length} ${rows.length===1?"entry":"entries"}</p><p>${plain(head)}</p>
+      <p><b>Standings as of ${esc(nowET())}</b></p>
+      <table><tr><th>#</th><th class="l">Name</th>${r.picksVisible?"<th>Skater pts</th><th>Save pts</th><th>Team wins</th><th>Score</th>":"<th>Entered</th>"}</tr>
+      ${rows.map((x,i)=>`<tr><td>${r.picksVisible?x.rk:i+1}</td><td class="l">${esc(x.e.name)}</td>${r.picksVisible?`<td>${x.s.sk}</td><td>${(x.s.sv/20).toFixed(2)}</td><td>${x.s.tw}</td><td><b>${x.s.total.toFixed(2)}</b></td>`:`<td>${x.e.entered?esc(new Date(x.e.entered).toLocaleDateString("en-CA",{month:"short",day:"numeric"})):""}</td>`}</tr>`).join("")}</table>
+      ${r.picksVisible?"":`<p class="muted" style="font-size:10pt">Scores and everyone's picks appear once entries close.</p>`}
+      <p style="font-size:10pt;color:#555">Score = skater points + goalie saves ÷ 20 + team wins. Live standings: hockeypooler.com/pools → Check your ranking → Pool Code ${esc(code)}.</p>`,
+      `Hockey Pooler - Pool ${code} standings ${new Date().toLocaleDateString("en-CA",{timeZone:"America/Toronto"})}`)};
   app.querySelectorAll(".nm").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,tr=$("#pk"+i);if(!tr.hidden){tr.hidden=true;return}
     const x=rows[i],P=x.e.picks,S=x.s;const nmOf=id=>id.slice(id.indexOf("|")+1),tmOf=id=>id.slice(0,id.indexOf("|"));
     const pg=(g,unit)=>`<div class="pg"><b>${GNAME[g]}</b>${(P[g]||[]).map(id=>`<div><span>${g==="T"?bdg(id)+" "+esc(tname(id)):bdg(tmOf(id))+" "+esc(nmOf(id))}</span><span>${S.items[id]||0} ${unit}</span></div>`).join("")}</div>`;
