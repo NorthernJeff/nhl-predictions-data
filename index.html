@@ -808,7 +808,7 @@ function renderBacktest(){
   const minGP=3,{R,eligible}=backtest(minGP);const tk=trackedData();R.pl=tk.pl;R.gk=tk.gk;
   const E=eloRun();R.elo={n:0,ok:0};R.rest={n:0,ok:0};E.preds.filter(x=>x.elig).forEach(x=>{R.elo.n++;if((x.p>.5)===(x.y===1))R.elo.ok++;
     if((x.ra===0)!==(x.rh===0)){R.rest.n++;if((x.ra===0)===(x.y===1))R.rest.ok++}});
-  const rows=[["mom","1. Momentum","Team with higher momentum"],["ratio","2. Goals for vs. against ratio","Team with higher ratio"],["gfg","3. Goals for per game","Team scoring more per game"],["gag","4. Goals against per game","Team allowing fewer per game"],["home","Home Team Advantage","Home team"]];
+  const rows=[["mom","Momentum","Team with higher momentum"],["ratio","Goals for vs. against ratio","Team with higher ratio"],["gfg","Goals for per game","Team scoring more per game"],["gag","Goals against per game","Team allowing fewer per game"],["home","Home Team Advantage","Home team"]];
   const line=([k,label,rule],ref)=>{const{n,ok}=R[k];if(!n)return`<tr><td>${label}</td><td colspan="5">No games yet</td></tr>`;
     const acc=ok/n*100,edge=acc-50,moe=196*Math.sqrt(.25/n);
     const verdict=Math.abs(edge)<moe?`<span style="color:#8a93a3">Too close to call yet</span>`:edge>0?`<span class="pos">Real signal so far</span>`:`<span class="neg">Worse than a coin flip</span>`;
@@ -819,7 +819,6 @@ function renderBacktest(){
   <table><tr><th>Statistic</th><th>Games picked</th><th>Correct</th><th>Hit rate</th><th>Edge vs 50%</th><th class="verdict">Verdict</th></tr>
   ${line(["elo","Team rating (main model)","Team with the higher rating, after home ice and rest"])}
   ${line(["rest","Rest","Rested team against a team on a back-to-back"])}
-  <tr><td colspan="6" style="background:#f6f8fb;font-size:11.5px;color:var(--ink2)"><b>Your original statistics</b></td></tr>
   ${rows.map(r=>line(r)).join("")}
   ${line(["pct","Reference: standings points %","Team with better points %"],true)}
   <tr><td colspan="6" style="background:#f6f8fb;font-size:11.5px;color:var(--ink2)"><b>Tracked from game-day lineups</b> (recorded before each game; started Nov 7, 2026)</td></tr>
