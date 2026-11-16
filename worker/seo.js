@@ -13,7 +13,7 @@ const TEAMS = [
 ];
 const T = {}; TEAMS.forEach(([d, a, n]) => (T[a] = { div: d, name: n }));
 const nm = a => (T[a] ? T[a].name : a);
-// Same constants as the app's Elo model (index.html)
+// Same constants as the app's Elo model (games.html)
 const ELO = { K: 7, INIT: 80, HOME: 30, B2B: 35, REVERT: 1 / 3 };
 
 export const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -155,12 +155,12 @@ export async function renderPredictions(env, origin) {
   ];
 
   const body = `
-<header class="top"><a class="brandlogo" href="/" title="Hockey Pooler home"><img src="/logo.png" alt="" width="30" height="30"><span>Hockey Pooler</span></a><nav><a href="/">Open the app</a><a href="/nhl-playoff-pool">Playoff pool</a></nav></header>
+<header class="top"><a class="brandlogo" href="/" title="Hockey Pooler home"><img src="/logo.png" alt="" width="30" height="30"><span>Hockey Pooler</span></a><nav><a href="/games">Open the app</a><a href="/nhl-playoff-pool">Playoff pool</a></nav></header>
 <main>
 <p class="crumb"><a href="/">${BRAND}</a> › NHL Predictions Today</p>
 <h1>NHL Predictions Today</h1>
 <p class="lede">Win probabilities for every NHL game ${day1 === today ? 'tonight' : 'on the next game day'}, <b>${esc(longDate(day1 || today))}</b>. ${top ? `Biggest favourite: <b>${esc(nm(fav(top)))}</b> at ${pct(Math.max(top.p, 1 - top.p))}.` : ''} ${acc != null ? `The model has picked ${acc}% of winners this season.` : ''}</p>
-<p class="cta"><a class="btn" href="/">See full predictions, lineups &amp; charts →</a></p>
+<p class="cta"><a class="btn" href="/games">See full predictions, lineups &amp; charts →</a></p>
 
 <h2>${day1 === today ? `Tonight's NHL Games · ${esc(shortDate(day1))}` : `NHL Games ${esc(d1label)}`}</h2>
 ${gamesTable(l1)}
@@ -235,7 +235,7 @@ footer{border-top:1px solid var(--line);padding:16px 20px;color:var(--muted);fon
 
 export function sitemap() {
   const today = etDate(0);
-  const urls = [['/', today, 'hourly', '1.0'], ['/nhl-predictions', today, 'hourly', '0.9'], ['/nhl-playoff-pool', '2026-11-09', 'weekly', '0.8'], ['/pools', '2026-11-09', 'weekly', '0.6'], ['/legal', '2026-11-09', 'yearly', '0.2']];
+  const urls = [['/', '2026-11-16', 'weekly', '1.0'], ['/games', today, 'hourly', '0.9'], ['/nhl-predictions', today, 'hourly', '0.9'], ['/nhl-playoff-pool', '2026-11-09', 'weekly', '0.8'], ['/pools', '2026-11-09', 'weekly', '0.6'], ['/legal', '2026-11-09', 'yearly', '0.2']];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(([p, d, f, pr]) => `  <url><loc>${SITE}${p}</loc><lastmod>${d}</lastmod><changefreq>${f}</changefreq><priority>${pr}</priority></url>`).join('\n')}
