@@ -317,6 +317,12 @@ footer a.legal{margin-left:auto;font-weight:700;white-space:nowrap}footer a.flin
 .lbt .grp td{text-align:left;font-weight:700;font-size:12px;background:var(--soft);color:var(--ink);padding:6px}
 .lbt.st .nm{max-width:none}
 @media (max-width:1100px){.lbwrap{grid-template-columns:1fr}}
+/* Tab colours matching the home page buttons: blue (Game/Teams Statistics, Momentum Chart) and red (Leaderboards), white text */
+nav.tabs a[data-tab=stats],nav.tabs a[data-tab=compare],nav.tabs a[data-tab=chart]{background:#1446c8;color:#fff!important}
+nav.tabs a[data-tab=leaders]{background:#c8102e;color:#fff!important}
+body.dark nav.tabs a[data-tab=stats],body.dark nav.tabs a[data-tab=compare],body.dark nav.tabs a[data-tab=chart]{background:#2f63e8}
+body.dark nav.tabs a[data-tab=leaders]{background:#d92b45}
+nav.tabs a[data-tab=chart] .cnt{color:rgba(255,255,255,.8)}
 </style>
 </head>
 <body>
