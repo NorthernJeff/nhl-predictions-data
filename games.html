@@ -752,7 +752,7 @@ function renderPrediction(a,b){
     lineup:(ca.ok&&cb.ok)?ELO.PER_GOAL*(ca.adj-cb.adj):null,shots:(sa&&sb)?ELO.PER_GOAL*(sa.adj-sb.adj):null};
   const dataW={rating:1,home:1,rest:1,lineup:W.lineup.w,shots:W.shots.w};const w=k=>predMode==="data"?dataW[k]:custW[k]/100;
   const keys=["rating","home","rest","lineup","shots"];let dr=0;keys.forEach(k=>{if(comp[k]!=null)dr+=w(k)*comp[k]});const P=eloP(dr);lastPred={a,b,P};
-  const pct=v=>(v>=0?"+":"−")+Math.abs(v).toFixed(1)+"%";const pc1=v=>(v*100).toFixed(1)+"%",sv3=v=>v.toFixed(3).replace(/^0/,"");
+  const pct=v=>(v>=0?"+":"−")+Math.abs(v).toFixed(1)+"%";const pc1=v=>(v*100).toFixed(1)+"%",sv3=v=>(v*100).toFixed(1)+"%";
   const restTxt=r=>r===0?"back-to-back":r+" day"+(r===1?"":"s")+" rest";
   const names={rating:"Team Rating",home:"Home Ice Advantage",rest:"Rest <small style='color:var(--muted);font-weight:400'>(days off since each team's last game — a team playing the second night of back-to-back games is usually more tired)</small>",lineup:"Lineup & Goalie Changes",shots:"Shooting & Save % Luck"};
   const PC=pairCols(a,b),ta={color:PC.a.color,badgeText:PC.a.text,line:PC.a.line},tb={color:PC.b.color,badgeText:PC.b.text,line:PC.b.line};const ev=E.eval,old=evalModel();
@@ -904,8 +904,8 @@ function renderLeaders(){const el=document.getElementById("leaders");if(curTab!=
       goals.map((r,i)=>`<tr><td class="rk">${rank(goals,i,"g")}</td>${pl(r)}<td>${r.gp}</td><td><b>${r.g}</b></td><td>${(r.g/r.gp).toFixed(2)}</td></tr>`).join(""))}
     ${card("Top Players by Points",`Goals + assists · stats as of ${fdate(STATS.updated,{month:"short",day:"numeric"})}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
       points.map((r,i)=>`<tr><td class="rk">${rank(points,i,"pts")}</td>${pl(r)}<td>${r.gp}</td><td>${r.g??"–"}</td><td>${r.a??(r.g!=null?r.pts-r.g:"–")}</td><td><b>${r.pts}</b></td><td>${sgn(r.pm)}</td></tr>`).join(""))}
-    ${card("Top Goaltenders — Our Rating",`Goals saved per game compared with a league-average goalie (league save % ${L.sv.toFixed(3).replace(/^0/,"")}, ~28.5 shots a game). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots, so a hot start over a few games can't top the list on its own.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Season</th>`,
-      gk.slice(0,lbN).map((r,i)=>`<tr><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${r.sv.toFixed(3).replace(/^0/,"")}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
+    ${card("Top Goaltenders — Our Rating",`Goals saved per game compared with a league-average goalie (league save % ${(L.sv*100).toFixed(1)+"%"}, ~28.5 shots a game). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots, so a hot start over a few games can't top the list on its own.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Season</th>`,
+      gk.slice(0,lbN).map((r,i)=>`<tr><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${(r.sv*100).toFixed(1)+"%"}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
   </div>`;
   el.querySelectorAll("[data-lbv]").forEach(b=>b.onclick=()=>{lbView=b.dataset.lbv;store.set("lbView",lbView);renderLeaders()})}
 // ===== Seasons & playoffs =====
@@ -1021,8 +1021,8 @@ function renderPoLeaders(){const el=document.getElementById("poleaders");if(curT
       goals.map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${rank(goals,i,"g")}</td>${pl(r)}<td>${r.gp}</td><td><b>${r.g}</b></td><td>${r.gp?(r.g/r.gp).toFixed(2):"–"}</td></tr>`).join(""))}
     ${card("Top Players by Points",`Playoff goals + assists${asOf}`,`<th></th><th class="nm">Player</th><th>Team</th><th>GP</th><th>G</th><th>A</th><th>PTS</th><th>+/-</th>`,
       points.map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${rank(points,i,"pts")}</td>${pl(r)}<td>${r.gp}</td><td>${r.g??"–"}</td><td>${r.a??(r.g!=null?r.pts-r.g:"–")}</td><td><b>${r.pts}</b></td><td>${sgn(r.pm)}</td></tr>`).join(""))}
-    ${card("Top Goaltenders — Our Rating",`Playoff goals saved per game compared with an average playoff goalie (playoff save % ${lsv.toFixed(3).replace(/^0/,"")}). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Playoffs</th>`,
-      gk.slice(0,lbN).map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${r.sv.toFixed(3).replace(/^0/,"")}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
+    ${card("Top Goaltenders — Our Rating",`Playoff goals saved per game compared with an average playoff goalie (playoff save % ${(lsv*100).toFixed(1)+"%"}). Small samples are pulled toward average as if each goalie had faced 1,500 extra average shots.`,`<th></th><th class="nm">Goalie</th><th>Team</th><th>GP</th><th>SV%</th><th>Rating</th><th title="Rating x games played">Playoffs</th>`,
+      gk.slice(0,lbN).map((r,i)=>`<tr${tmc(r.tm)}><td class="rk">${i+1}</td>${pl(r)}<td>${r.gp}</td><td>${(r.sv*100).toFixed(1)+"%"}</td><td><b class="${cls(r.r)}">${fg(r.r)}</b></td><td class="${cls(r.r*r.gp)}">${fg(r.r*r.gp)}</td></tr>`).join(""))}
   </div>`}
 // label for a playoff game in Upcoming games, e.g. "Round 1 · Game 3 · FLA leads 2–1"
 function poLabel(a,h,d){if(!poUnlocked()||!PO.schedule||!PO.schedule.some(g=>g[0]===d&&g[2]===a&&g[3]===h))return"";
@@ -1118,7 +1118,7 @@ function renderStats(){
       gfg:`${(F/st.gp).toFixed(2)}<small>${F} in ${st.gp} GP</small>`,
       gag:`${(A/st.gp).toFixed(2)}<small>${A} in ${st.gp} GP</small>`,
       goalie:`<select data-goalie="${tm}">${gs.map(g=>`<option value="${esc(g[0])}" ${g[0]===L.g?"selected":""}>${esc(g[0])} (${g[1]} GP)</option>`).join("")}</select>${goalieNote(tm)}`,
-      sv:G?`${G[2].toFixed(3).replace(/^0/,"")}<small>SV% · ${G[1]} GP</small>`:`<span class="empty">No goalie data</span>`,
+      sv:G?`${(G[2]*100).toFixed(1)+"%"}<small>SV% · ${G[1]} GP</small>`:`<span class="empty">No goalie data</span>`,
       gsave:G?`<span class="${cls(goalieGoals(G))}">${fg(goalieGoals(G))}</span><small>goals/game vs average goalie</small>`:"—",
       players:lineupEditor(tm),
       lsum:`<span class="${cls(LS.total)}">${fg(LS.total)}</span><small>goals/game · ${chosen.length} skaters + goalie</small>`,
