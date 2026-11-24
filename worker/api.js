@@ -163,9 +163,18 @@ function topSkaters(stats, k) {
   return sk.slice(0, k).map(x => [x.t, x.n, x.pos, x.pts, x.gp]);
 }
 
+// The regular season is over once the site leaves the "regular" phase or every regular-season game has been played.
+async function regularSeasonDone(ctx, seasonFile) {
+  if (seasonFile.phase && seasonFile.phase !== 'regular') return true;
+  const g = await siteJSON(ctx, 'games.json');
+  return ((g && g.games) || []).length >= 16 * (seasonFile.gamesPerTeam || 82);
+}
+
 async function createPool(ctx, p) {
   if (p.type !== 'playoffs' && p.type !== 'monthly') return { ok: false, error: 'Unknown pool type.' };
-  const season = (await siteJSON(ctx, 'season.json')).season;
+  const seasonFile = await siteJSON(ctx, 'season.json'), season = seasonFile.season;
+  if (p.type === 'playoffs' && !(await regularSeasonDone(ctx, seasonFile)))
+    return { ok: false, error: 'Playoff pools open once the regular season has ended.' };
   let meta = null;
   if (p.type === 'monthly') {
     const nm = await nextMonth(ctx);
