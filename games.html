@@ -323,6 +323,9 @@ nav.tabs a[data-tab=leaders]{background:#c8102e;color:#fff!important}
 body.dark nav.tabs a[data-tab=stats],body.dark nav.tabs a[data-tab=compare],body.dark nav.tabs a[data-tab=chart]{background:#2f63e8}
 body.dark nav.tabs a[data-tab=leaders]{background:#d92b45}
 nav.tabs a[data-tab=chart] .cnt{color:rgba(255,255,255,.8)}
+.homebtn{margin-left:8px;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--panel2);color:var(--ink)!important;text-decoration:none;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;line-height:1.4;white-space:nowrap}
+.homebtn:hover{background:var(--soft)}
+@media(max-width:700px){.homebtn{margin-left:6px;padding:4px 9px}}
 </style>
 </head>
 <body>
@@ -332,7 +335,7 @@ nav.tabs a[data-tab=chart] .cnt{color:rgba(255,255,255,.8)}
   <span class="sub" id="upd">Loading…</span>
   <div class="legend">
     <span class="lg">Win ↗ +1</span><span class="lg">Loss ↘ −1</span><span class="lg">Tie → 0</span>
-    <a class="poolbtn" href="pools.html">🏒 Pools</a>
+    <a class="poolbtn" href="pools.html">🏒 Pools</a><a class="homebtn" href="/" title="Back to the Hockey Pooler home page" aria-label="Home">⌂ Home</a>
     <button class="modebtn" id="modebtn" title="Switch between light and dark mode">☾ Dark</button>
   </div>
 </header>
